@@ -19,13 +19,14 @@ button{padding:9px 10px;margin:3px;background:#1d3040;color:#fff;border:1px soli
 <button id="pause">Pause rotation</button><button id="reset">Reset view</button><button id="crack">Hide crack</button><button id="explode">Exploded view</button>
 <h2>Prototype dimensions</h2><ul><li>Ball diameter: 20 mm</li><li>Initial stand-off: 5 mm</li><li>Patch: 11.85 × 9.99 mm</li><li>RT5880 substrate: 30 × 30 × 0.254 mm</li><li>Ground: 30 × 30 × 0.035 mm</li><li>Feedline: 0.799 × 5.05 mm</li></ul>
 <p><b>Important:</b> the crack is a visual marker. Detection performance requires physical antenna/VNA measurements.</p></aside></div>
-<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"}}</script>
-<script type="module">
-import * as THREE from 'three';import{OrbitControls}from'three/addons/controls/OrbitControls.js';
+<script src="https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.164.1/examples/js/controls/OrbitControls.js"></script>
+<script>
+
 const view=document.getElementById('view'),scene=new THREE.Scene();scene.background=new THREE.Color(0x081019);
 const cam=new THREE.PerspectiveCamera(45,1,.1,500);cam.position.set(105,82,92);
 const ren=new THREE.WebGLRenderer({antialias:true});ren.setPixelRatio(Math.min(devicePixelRatio,2));ren.setSize(view.clientWidth,innerHeight);ren.shadowMap.enabled=true;view.appendChild(ren.domElement);
-const ctl=new OrbitControls(cam,ren.domElement);ctl.target.set(0,0,43);ctl.enableDamping=true;
+const ctl=new THREE.OrbitControls(cam,ren.domElement);ctl.target.set(0,0,43);ctl.enableDamping=true;
 scene.add(new THREE.HemisphereLight(0xcfe3ff,0x17212d,2));let dl=new THREE.DirectionalLight(0xffffff,2.3);dl.position.set(80,100,100);dl.castShadow=true;scene.add(dl);
 const root=new THREE.Group();scene.add(root);const groups={};
 const mat=(c,m=.5,r=.35)=>new THREE.MeshStandardMaterial({color:c,metalness:m,roughness:r});
