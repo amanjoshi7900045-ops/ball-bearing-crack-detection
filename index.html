@@ -27,7 +27,7 @@ const cam=new THREE.PerspectiveCamera(45,1,.1,500);cam.position.set(105,82,92);
 const ren=new THREE.WebGLRenderer({antialias:true});ren.setPixelRatio(Math.min(devicePixelRatio,2));ren.setSize(view.clientWidth,innerHeight);ren.shadowMap.enabled=true;view.appendChild(ren.domElement);
 const ctl=new OrbitControls(cam,ren.domElement);ctl.target.set(0,0,43);ctl.enableDamping=true;
 scene.add(new THREE.HemisphereLight(0xcfe3ff,0x17212d,2));let dl=new THREE.DirectionalLight(0xffffff,2.3);dl.position.set(80,100,100);dl.castShadow=true;scene.add(dl);
-const root=new THREE.Group();scene.add(root),groups={};
+const root=new THREE.Group();scene.add(root);const groups={};
 const mat=(c,m=.5,r=.35)=>new THREE.MeshStandardMaterial({color:c,metalness:m,roughness:r});
 const M={frame:mat(0x252d36,.65,.32),steel:mat(0xb7c0ca,.9,.2),roller:mat(0x737c86,.75,.25),drive:mat(0x4b8ddd,.55,.3),gold:mat(0xb88723,.65,.25),copper:mat(0xc66b2f,.9,.18),rt:mat(0x4c9863,.05,.5),red:mat(0xbd4c4c,.35,.3),dark:mat(0x424b57,.65,.3),crack:mat(0xff352e,.2,.2)};
 function G(n){groups[n]=new THREE.Group();root.add(groups[n]);return groups[n]}groups.ball=G('ball');groups.roll=G('rollers');groups.sensor=G('sensor');groups.drive=G('drive');groups.frame=G('frame');
@@ -41,10 +41,11 @@ box([28,22,20],[0,0,90],M.drive,groups.drive);cyl(3,15,[0,0,78],M.drive,groups.d
 box([44,32,8],[0,0,18],M.frame,groups.sensor);box([34,28,3],[0,0,23],M.dark,groups.sensor);[-19,19].forEach(x=>cyl(2,42,[x,0,12],M.steel,groups.sensor));
 const sa=new THREE.Group();groups.sensor.add(sa);box([30,24,10],[0,0,27],M.red,sa);box([30,30,.254],[0,0,33],M.rt,sa);box([30,30,.035],[0,0,33.3],M.copper,sa);box([11.85,9.99,.035],[0,0,33.34],M.copper,sa);box([.799,5.05,.04],[0,-7.52,33.34],M.copper,sa);cyl(3.5,5,[0,-14,31],M.steel,sa);
 box([42,30,18],[35,-25,18],M.dark,root);box([22,1,10],[35,-40,20],M.frame,root);
+const gapEl=document.getElementById('gap'),speedEl=document.getElementById('speed'),gv=document.getElementById('gv'),sv=document.getElementById('sv'),pause=document.getElementById('pause'),reset=document.getElementById('reset'),crackBtn=document.getElementById('crack'),explodeBtn=document.getElementById('explode');
 let gap=5,speed=.8,paused=false,exploded=false;
 gapEl.oninput=()=>{gap=+gapEl.value;gv.textContent=gap.toFixed(1)+' mm'};speedEl.oninput=()=>{speed=+speedEl.value;sv.textContent=speed.toFixed(1)+'×'};
-pause.onclick=e=>{paused=!paused;e.target.textContent=paused?'Resume rotation':'Pause rotation'};crack.onclick=e=>{crack.visible=!crack.visible;e.target.textContent=crack.visible?'Hide crack':'Show crack'};
-explode.onclick=()=>exploded=!exploded;reset.onclick=()=>{cam.position.set(105,82,92);ctl.target.set(0,0,43);ctl.update()};
+pause.onclick=e=>{paused=!paused;e.target.textContent=paused?'Resume rotation':'Pause rotation'};crackBtn.onclick=e=>{crack.visible=!crack.visible;e.target.textContent=crack.visible?'Hide crack':'Show crack'};
+explodeBtn.onclick=()=>exploded=!exploded;reset.onclick=()=>{cam.position.set(105,82,92);ctl.target.set(0,0,43);ctl.update()};
 function resize(){cam.aspect=view.clientWidth/innerHeight;cam.updateProjectionMatrix();ren.setSize(view.clientWidth,innerHeight)}addEventListener('resize',resize);
 let last=performance.now();function loop(t){requestAnimationFrame(loop);let dt=(t-last)/1000;last=t;if(!paused)groups.ball.rotation.y+=dt*speed*1.7;sa.position.z=gap-5;groups.roll.position.y=exploded?-12:0;groups.sensor.position.y=exploded?-18:0;groups.drive.position.y=exploded?18:0;ctl.update();ren.render(scene,cam)}loop(performance.now());
 </script></body></html>
