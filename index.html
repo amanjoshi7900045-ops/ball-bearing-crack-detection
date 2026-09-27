@@ -1,97 +1,194 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Ball Bearing Crack Detection — 3D Prototype</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ball Bearing Crack Detection — Interactive Prototype</title>
 <style>
-*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#071018;color:#eaf4ff;font-family:Arial,sans-serif}
-#app{width:100%;height:100%;display:flex}.stage{position:relative;flex:1;overflow:hidden;background:radial-gradient(circle at 48% 42%,#162b3b 0,#09131c 48%,#050a0f 100%)}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#050b11;color:#edf7ff;font-family:Inter,Arial,sans-serif}
+#app{height:100%;display:flex}.stage{position:relative;flex:1;min-width:0;overflow:hidden;background:radial-gradient(circle at 50% 42%,#183247 0,#09141d 52%,#04080c 100%)}
 canvas{width:100%;height:100%;display:block;cursor:grab}.drag{cursor:grabbing}
-.panel{width:320px;background:#101a24;border-left:1px solid #2a4051;padding:20px;overflow:auto}
-h1{font-size:20px;margin:0 0 8px}.badge{display:inline-block;padding:5px 8px;border-radius:5px;background:#20384a;color:#bde7ff;font-size:11px}
-p,li,label{font-size:12px;line-height:1.55;color:#bdcbd7}.control{margin:14px 0}.control label{display:flex;justify-content:space-between}input{width:100%}
-button{padding:9px 10px;margin:3px;background:#1c3040;color:#fff;border:1px solid #3d596e;border-radius:7px;cursor:pointer}
-#hud{position:absolute;left:16px;top:16px;padding:10px 12px;background:#071019dd;border:1px solid #30495b;border-radius:8px;font-size:12px}
-#legend{position:absolute;right:18px;top:18px;font-size:11px;color:#9fb4c5;text-align:right;line-height:1.7}
-</style></head>
+.panel{width:350px;background:#0c151e;border-left:1px solid #294050;padding:18px;overflow:auto}
+h1{font-size:20px;margin:0 0 5px}.sub{font-size:11px;color:#8eb2c8}.badge{display:inline-block;margin:8px 0;padding:5px 8px;border-radius:5px;background:#173246;color:#9ee1ff;font-size:10px}
+h2{font-size:13px;text-transform:uppercase;letter-spacing:1px;color:#8fd9ff;margin:20px 0 9px}
+p,li,label{font-size:11px;line-height:1.5;color:#b9cbd6}.control{margin:12px 0}.control label{display:flex;justify-content:space-between}.control b{color:#fff}input{width:100%}
+button{padding:8px 9px;margin:2px;background:#152938;color:#eaf7ff;border:1px solid #315165;border-radius:6px;cursor:pointer;font-size:11px}button:hover{background:#1d3a4e}
+.parts{display:grid;grid-template-columns:1fr 1fr;gap:5px}.part{margin:0;text-align:left}.part.active{border-color:#72d8ff;background:#174058}
+.readout{display:grid;grid-template-columns:1fr 1fr;gap:6px}.metric{padding:8px;border:1px solid #243d4d;border-radius:6px;background:#0a1219}.metric span{display:block;color:#7e9baa;font-size:9px}.metric strong{font-size:13px}
+#hud{position:absolute;left:16px;top:16px;padding:10px 12px;background:#061019dd;border:1px solid #2c4c60;border-radius:8px;font-size:11px;line-height:1.6;pointer-events:none}
+#status{color:#75d6ff}#hint{position:absolute;left:16px;bottom:15px;color:#7d99a8;font-size:10px}
+#legend{position:absolute;right:18px;top:18px;font-size:10px;color:#9fb8c7;text-align:right;line-height:1.7;pointer-events:none}
+#info{position:absolute;right:18px;bottom:16px;width:245px;padding:11px;background:#071019e8;border:1px solid #315266;border-radius:8px;display:none}
+#info b{color:#7fdcff}#info .x{float:right;cursor:pointer;color:#8ba6b5}
+.warning{font-size:10px;color:#e6b96c!important}
+</style>
+</head>
 <body>
 <div id="app">
-<div class="stage" id="stage"><canvas id="c"></canvas><div id="hud">INTERACTIVE 3D PROTOTYPE<br><span style="color:#7fd4ff">Drag</span> to orbit • <span style="color:#7fd4ff">Wheel</span> to zoom</div><div id="legend">BALL • 20 mm<br>3 SUPPORT ROLLERS<br>BOTTOM SENSOR • 10 GHz<br>INITIAL STAND-OFF • 5 mm</div></div>
+<div class="stage" id="stage">
+<canvas id="c"></canvas>
+<div id="hud"><b>MICROWAVE CRACK INSPECTION</b><br>Mode: <span id="status">LIVE SIMULATION</span><br>Ball: <span id="spinHud">ROTATING</span> • Sensor gap: <span id="gapHud">5.0 mm</span></div>
+<div id="legend">1 — TEST BALL<br>2 — SUPPORT ROLLERS<br>3 — SENSOR CARRIAGE<br>4 — 10 GHz PATCH<br>5 — VNA / ELECTRONICS<br>6 — Z-SLIDE + FRAME</div>
+<div id="hint">Drag = orbit view • Wheel = zoom • Click a labeled part for details</div>
+<div id="info"><span class="x" id="closeInfo">×</span><b id="infoTitle"></b><p id="infoText"></p></div>
+</div>
 <aside class="panel">
-<h1>Ball Bearing Crack Detection</h1><span class="badge">Bottom-up microwave inspection concept</span>
-<p>Rotating metallic test ball, three support rollers, adjustable sensor carriage and a represented 10 GHz patch antenna.</p>
-<h2>Controls</h2>
-<div class="control"><label>Sensor gap <b id="gv">5.0 mm</b></label><input id="gap" type="range" min="2" max="12" step=".1" value="5"></div>
-<div class="control"><label>Rotation <b id="sv">0.8×</b></label><input id="speed" type="range" min="0" max="3" step=".1" value=".8"></div>
+<h1>Ball Bearing Crack Detection</h1><div class="sub">Antenna-based microwave inspection system</div>
+<span class="badge">INTERACTIVE PROTOTYPE • 20 mm TEST BALL • 10 GHz CONCEPT</span>
+<p>The model shows how a metallic ball is supported, rotated and inspected from below with a non-contact microwave sensor. Controls below drive the visual simulation.</p>
+
+<h2>Live controls</h2>
+<div class="control"><label>Sensor stand-off <b id="gv">5.0 mm</b></label><input id="gap" type="range" min="2" max="12" step=".1" value="5"></div>
+<div class="control"><label>Ball rotation <b id="sv">1.0×</b></label><input id="speed" type="range" min="0" max="3" step=".1" value="1"></div>
 <button id="pause">Pause rotation</button><button id="reset">Reset view</button><button id="crack">Hide crack</button><button id="explode">Exploded view</button>
-<h2>Prototype dimensions</h2><ul><li>Ball diameter: 20 mm</li><li>Initial stand-off: 5 mm</li><li>Patch: 11.85 × 9.99 mm</li><li>RT5880 substrate: 30 × 30 × 0.254 mm</li><li>Ground: 30 × 30 × 0.035 mm</li><li>Feedline: 0.799 × 5.05 mm</li></ul>
-<p><b>Important:</b> the crack is a visual marker. Actual detection requires physical antenna/VNA measurements.</p>
-</aside></div>
+
+<h2>Parts — click to identify</h2>
+<div class="parts">
+<button class="part" data-part="ball">1. Test Ball</button>
+<button class="part" data-part="rollers">2. Support Rollers</button>
+<button class="part" data-part="carriage">3. Sensor Carriage</button>
+<button class="part" data-part="patch">4. Patch Antenna</button>
+<button class="part" data-part="vna">5. VNA / Electronics</button>
+<button class="part" data-part="frame">6. Z-Slide / Frame</button>
+<button class="part" data-part="motor">7. Drive Motor</button>
+<button class="part" data-part="base">8. Base</button>
+</div>
+
+<h2>Simulated measurement</h2>
+<div class="readout">
+<div class="metric"><span>Resonance</span><strong id="freq">10.028 GHz</strong></div>
+<div class="metric"><span>S11</span><strong id="s11">−37.7 dB</strong></div>
+<div class="metric"><span>Scan angle</span><strong id="angle">0°</strong></div>
+<div class="metric"><span>Crack state</span><strong id="state">DETECTED</strong></div>
+</div>
+<p class="warning">Simulation only: the displayed frequency/S11 values are visualized from the prototype parameters, not live VNA measurements.</p>
+
+<h2>Prototype dimensions</h2>
+<ul>
+<li>Ball diameter: 20 mm</li><li>Initial microwave stand-off: 5 mm</li>
+<li>Patch: 11.85 × 9.99 mm</li><li>RT5880 substrate: 30 × 30 × 0.254 mm</li>
+<li>Ground: 30 × 30 × 0.035 mm</li><li>Feedline: 0.799 × 5.05 mm</li>
+</ul>
+</aside>
+</div>
 <script>
-(()=> {
+(()=>{
 const canvas=document.getElementById('c'),stage=document.getElementById('stage'),ctx=canvas.getContext('2d');
-const gapEl=document.getElementById('gap'),speedEl=document.getElementById('speed'),gv=document.getElementById('gv'),sv=document.getElementById('sv');
-let yaw=.65,pitch=.52,zoom=1.0,gap=5,speed=.8,paused=false,showCrack=true,exploded=false,ballSpin=0,drag=false,lx=0,ly=0;
-const P=(x,y,z)=>{
+const gapEl=document.getElementById('gap'),speedEl=document.getElementById('speed');
+const gv=document.getElementById('gv'),sv=document.getElementById('sv');
+const freqEl=document.getElementById('freq'),s11El=document.getElementById('s11'),angleEl=document.getElementById('angle'),stateEl=document.getElementById('state');
+const gapHud=document.getElementById('gapHud'),spinHud=document.getElementById('spinHud');
+let yaw=.55,pitch=.48,zoom=1, gap=5, speed=1, paused=false, showCrack=true, exploded=false, spin=0, drag=false,lx=0,ly=0,last=performance.now();
+
+function project(x,y,z){
  const cy=Math.cos(yaw),sy=Math.sin(yaw),cp=Math.cos(pitch),sp=Math.sin(pitch);
- let X=x*cy-z*sy,Z=x*sy+z*cy,Y=y;
- let Y2=Y*cp-Z*sp,Z2=Y*sp+Z*cp;
- const s=zoom*4.8/(1+Z2/260);
- return [canvas.width/2+X*s,canvas.height/2+105-Y2*s,s,Z2];
-};
-function poly(points,fill,stroke){
- const q=points.map(v=>P(...v));ctx.beginPath();ctx.moveTo(q[0][0],q[0][1]);q.slice(1).forEach(v=>ctx.lineTo(v[0],v[1]));ctx.closePath();ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=1;ctx.stroke()} return q.reduce((a,b)=>a+b[3],0)/q.length;
+ const X=x*cy-z*sy, Z=x*sy+z*cy;
+ const Y=y*cp-Z*sp, Z2=y*sp+Z*cp;
+ const s=zoom*4.5/(1+Z2/260);
+ return [canvas.clientWidth/2+X*s,canvas.clientHeight/2+105-Y*s,s,Z2];
+}
+function poly(points,fill,stroke='#354c5b'){
+ const q=points.map(v=>project(...v));ctx.beginPath();ctx.moveTo(q[0][0],q[0][1]);for(let i=1;i<q.length;i++)ctx.lineTo(q[i][0],q[i][1]);ctx.closePath();ctx.fillStyle=fill;ctx.fill();ctx.strokeStyle=stroke;ctx.lineWidth=1;ctx.stroke();
+ return q.reduce((a,b)=>a+b[3],0)/q.length;
 }
 function box(cx,cy,cz,w,h,d,fill){
- const x=w/2,y=h/2,z=d/2;
- return [
-  [[cx-x,cy-y,cz-z],[cx+x,cy-y,cz-z],[cx+x,cy+y,cz-z],[cx-x,cy+y,cz-z]],
-  [[cx-x,cy-y,cz+z],[cx+x,cy-y,cz+z],[cx+x,cy+y,cz+z],[cx-x,cy+y,cz+z]],
-  [[cx-x,cy-y,cz-z],[cx-x,cy-y,cz+z],[cx-x,cy+y,cz+z],[cx-x,cy+y,cz-z]],
-  [[cx+x,cy-y,cz-z],[cx+x,cy-y,cz+z],[cx+x,cy+y,cz+z],[cx+x,cy+y,cz-z]],
-  [[cx-x,cy+y,cz-z],[cx+x,cy+y,cz-z],[cx+x,cy+y,cz+z],[cx-x,cy+y,cz+z]]
- ].map(f=>({f,d:poly(f,fill,'#344958')})).sort((a,b)=>a.d-b.d).forEach(o=>poly(o.f,fill,'#344958'));
+ const x=w/2,y=h/2,z=d/2,faces=[
+ [[cx-x,cy-y,cz-z],[cx+x,cy-y,cz-z],[cx+x,cy+y,cz-z],[cx-x,cy+y,cz-z]],
+ [[cx-x,cy-y,cz+z],[cx+x,cy-y,cz+z],[cx+x,cy+y,cz+z],[cx-x,cy+y,cz+z]],
+ [[cx-x,cy-y,cz-z],[cx-x,cy-y,cz+z],[cx-x,cy+y,cz+z],[cx-x,cy+y,cz-z]],
+ [[cx+x,cy-y,cz-z],[cx+x,cy-y,cz+z],[cx+x,cy+y,cz+z],[cx+x,cy+y,cz-z]],
+ [[cx-x,cy+y,cz-z],[cx+x,cy+y,cz-z],[cx+x,cy+y,cz+z],[cx-x,cy+y,cz+z]]
+ ];
+ faces.map(f=>({f,d:poly(f,fill)})).sort((a,b)=>a.d-b.d).forEach(o=>poly(o.f,fill));
 }
-function cyl(x,y,z,r,h,fill){
- const pts=[];const n=28;
- for(let i=0;i<n;i++){const a=i*2*Math.PI/n;pts.push([x+Math.cos(a)*r,y,z+Math.sin(a)*r])}
- poly(pts,fill,'#50606c');
+function cyl(x,y,z,r,h,fill,rot=0){
+ const pts=[],n=28;for(let i=0;i<n;i++){const a=i*2*Math.PI/n+rot;pts.push([x+Math.cos(a)*r,y,z+Math.sin(a)*r])}poly(pts,fill,'#5c6c77');
+}
+function label(text,x,y,z,dx,dy,key){
+ const q=project(x,y,z),tx=q[0]+dx,ty=q[1]+dy;
+ ctx.save();ctx.strokeStyle='#5b8aa2';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(q[0],q[1]);ctx.lineTo(tx,ty);ctx.stroke();
+ ctx.font='bold 11px Arial';const pad=5,w=ctx.measureText(text).width+pad*2;
+ ctx.fillStyle='#07131ce8';ctx.fillRect(tx,ty-14,w,21);ctx.strokeStyle='#41677b';ctx.strokeRect(tx,ty-14,w,21);
+ ctx.fillStyle='#dff6ff';ctx.fillText(text,tx+pad,ty+1);ctx.restore();
 }
 function sphere(cx,cy,cz,r){
- const q=P(cx,cy,cz),R=r*q[2]*.95;
- const g=ctx.createRadialGradient(q[0]-R*.3,q[1]-R*.35,R*.1,q[0],q[1],R);
- g.addColorStop(0,'#ffffff');g.addColorStop(.18,'#dce5ec');g.addColorStop(.58,'#7f8c98');g.addColorStop(1,'#303a43');
- ctx.beginPath();ctx.arc(q[0],q[1],R,0,Math.PI*2);ctx.fillStyle=g;ctx.fill();ctx.strokeStyle='#aebbc5';ctx.stroke();
- if(showCrack){ctx.save();ctx.translate(q[0],q[1]);ctx.rotate(-.22+yaw*.15);ctx.strokeStyle='#ff3d32';ctx.lineWidth=Math.max(2,R*.035);ctx.beginPath();ctx.moveTo(-R*.18,-R*.55);ctx.lineTo(-R*.04,-R*.25);ctx.lineTo(-R*.16,0);ctx.lineTo(R*.04,R*.25);ctx.lineTo(R*.15,R*.55);ctx.stroke();ctx.restore()}
+ const q=project(cx,cy,cz),R=r*q[2]*.95;
+ const g=ctx.createRadialGradient(q[0]-R*.32,q[1]-R*.35,R*.05,q[0],q[1],R);
+ g.addColorStop(0,'#fff');g.addColorStop(.2,'#dfe8ee');g.addColorStop(.55,'#8996a0');g.addColorStop(1,'#303a43');
+ ctx.beginPath();ctx.arc(q[0],q[1],R,0,Math.PI*2);ctx.fillStyle=g;ctx.fill();ctx.strokeStyle='#c5d1d9';ctx.lineWidth=1.5;ctx.stroke();
+ if(showCrack){
+   ctx.save();ctx.translate(q[0],q[1]);ctx.rotate(-.25+spin*.9);
+   ctx.strokeStyle='#ff4438';ctx.lineWidth=Math.max(2,R*.045);ctx.shadowBlur=8;ctx.shadowColor='#ff4438';
+   ctx.beginPath();ctx.moveTo(-R*.2,-R*.55);ctx.lineTo(-R*.04,-R*.27);ctx.lineTo(-R*.16,0);ctx.lineTo(R*.03,R*.25);ctx.lineTo(R*.15,R*.55);ctx.stroke();ctx.restore();
+ }
 }
-function render(){
+function render(now){
  const dpr=Math.min(devicePixelRatio||1,2),w=stage.clientWidth,h=stage.clientHeight;
- if(canvas.width!==w*dpr||canvas.height!==h*dpr){canvas.width=w*dpr;canvas.height=h*dpr;ctx.setTransform(dpr,0,0,dpr,0,0)}
- ctx.clearRect(0,0,w,h);ctx.save();ctx.scale(1,1);
- const ex=exploded;
- box(0,-5,0,120,8,100,'#252f38');
- box(-48,31,0,8,70,10,'#252f38');box(48,31,0,8,70,10,'#252f38');box(0,66,0,104,8,10,'#252f38');
- [[-13,-8],[13,-8],[0,15]].forEach(a=>cyl(a[0],ex?-25:18,a[1],4,12,'#6f7b86'));
- box(0,ex?10:23,0,44,8,32,'#444f5a');
- box(0,ex?18:28,0,30,10,24,'#b44c4c');
- box(0,ex?25:33,0,30,1,30,'#4d9b68');
- box(0,ex?25.7:33.7,0,30,1,30,'#b86d31');
- box(0,ex?26.5:34.5,0,11.85,.7,9.99,'#d07a37');
- box(0,ex?27:35, -6, .8,.7,5.05,'#e69a50');
- box(0,ex?8:42,0,28,20,22,'#477fd0');box(0,ex?0:48,0,6,16,6,'#477fd0');
+ if(canvas.width!==Math.floor(w*dpr)||canvas.height!==Math.floor(h*dpr)){canvas.width=Math.floor(w*dpr);canvas.height=Math.floor(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0)}
+ ctx.clearRect(0,0,w,h);
+ const e=exploded;
+ const baseY=-5, sensorY=e?10:23+((gap-5)*0.85);
+ box(0,baseY,0,120,8,100,'#27333c');
+ box(-48,31,0,8,70,10,'#27333c');box(48,31,0,8,70,10,'#27333c');box(0,66,0,104,8,10,'#27333c');
+ [[-13,-8],[13,-8],[0,15]].forEach(a=>cyl(a[0],e?-25:18,a[1],4,12,'#697782',spin*2));
+ box(0,e?10:23,0,44,8,32,'#4a5660');
+ box(0,sensorY,0,30,10,24,'#a54b4b');
+ box(0,sensorY+7,0,30,1,30,'#4e9c69');
+ box(0,sensorY+7.7,0,30,1,30,'#b96f34');
+ box(0,sensorY+8.5,0,11.85,.7,9.99,'#e08a3b');
+ box(0,sensorY+9.2,-6,.8,.7,5.05,'#efad63');
+ box(0,e?8:42,0,28,20,22,'#477fd0');box(0,e?0:48,0,6,16,6,'#477fd0');
  box(34,-8,0,42,18,30,'#414b56');
  sphere(0,48,0,10);
- ctx.restore();
+ label('TEST BALL • 20 mm',0,48,0,-105,-85,'ball');
+ label('3 SUPPORT ROLLERS',0,18,15,-105,18,'rollers');
+ label('SENSOR CARRIAGE',0,e?10:23,0,-105,42,'carriage');
+ label('10 GHz PATCH',0,sensorY+8.5,0,78,28,'patch');
+ label('VNA / ELECTRONICS',34,-8,0,65,20,'vna');
+ label('Z-SLIDE + FRAME',-48,35,0,-120,-25,'frame');
+ label('DRIVE MOTOR',34,42,0,55,-25,'motor');
+ label('BASE',-35,-5,0,-70,40,'base');
 }
-function loop(t){if(!paused)ballSpin+=.01*speed;render();requestAnimationFrame(loop)}requestAnimationFrame(loop);
-gapEl.oninput=()=>{gap=+gapEl.value;gv.textContent=gap.toFixed(1)+' mm'};speedEl.oninput=()=>{speed=+speedEl.value;sv.textContent=speed.toFixed(1)+'×'};
+function animate(now){
+ const dt=Math.min((now-last)/1000,.05);last=now;
+ if(!paused){spin+=dt*speed*2.8}
+ const deg=((spin*180/Math.PI)%360+360)%360;
+ angleEl.textContent=Math.round(deg)+'°';
+ gapHud.textContent=gap.toFixed(1)+' mm';spinHud.textContent=paused?'PAUSED':'ROTATING';
+ const freq=10.028+(gap-5)*.004-(showCrack?0:0.048);
+ const s11=-37.7+Math.abs(gap-5)*1.55+(showCrack?0:8);
+ freqEl.textContent=freq.toFixed(3)+' GHz';s11El.textContent='−'+Math.abs(s11).toFixed(1)+' dB';stateEl.textContent=showCrack?'DETECTED':'REFERENCE';
+ render(now);requestAnimationFrame(animate);
+}
+requestAnimationFrame(animate);
+
+gapEl.oninput=()=>{gap=+gapEl.value;gv.textContent=gap.toFixed(1)+' mm'};
+speedEl.oninput=()=>{speed=+speedEl.value;sv.textContent=speed.toFixed(1)+'×'};
 document.getElementById('pause').onclick=e=>{paused=!paused;e.target.textContent=paused?'Resume rotation':'Pause rotation'};
 document.getElementById('crack').onclick=e=>{showCrack=!showCrack;e.target.textContent=showCrack?'Hide crack':'Show crack'};
-document.getElementById('explode').onclick=()=>exploded=!exploded;
-document.getElementById('reset').onclick=()=>{yaw=.65;pitch=.52;zoom=1};
-stage.addEventListener('pointerdown',e=>{drag=true;lx=e.clientX;ly=e.clientY;canvas.classList.add('drag');canvas.setPointerCapture(e.pointerId)});
-stage.addEventListener('pointermove',e=>{if(!drag)return;yaw+=(e.clientX-lx)*.008;pitch+=(e.clientY-ly)*.006;pitch=Math.max(-1.2,Math.min(1.2,pitch));lx=e.clientX;ly=e.clientY});
+document.getElementById('explode').onclick=()=>{exploded=!exploded};
+document.getElementById('reset').onclick=()=>{yaw=.55;pitch=.48;zoom=1;gap=5;gapEl.value=5;gv.textContent='5.0 mm'};
+stage.addEventListener('pointerdown',e=>{if(e.target.closest&&e.target.closest('button'))return;drag=true;lx=e.clientX;ly=e.clientY;canvas.classList.add('drag');canvas.setPointerCapture(e.pointerId)});
+stage.addEventListener('pointermove',e=>{if(!drag)return;yaw+=(e.clientX-lx)*.008;pitch+=(e.clientY-ly)*.006;pitch=Math.max(-1.15,Math.min(1.15,pitch));lx=e.clientX;ly=e.clientY});
 stage.addEventListener('pointerup',()=>{drag=false;canvas.classList.remove('drag')});
 stage.addEventListener('wheel',e=>{e.preventDefault();zoom*=Math.exp(-e.deltaY*.001);zoom=Math.max(.45,Math.min(2.5,zoom))},{passive:false});
+
+const details={
+ball:['Test Ball','20 mm metallic spherical test specimen. The red line is a visual crack marker used by this prototype.'],
+rollers:['Support Rollers','Three rollers hold the ball while allowing it to rotate.'],
+carriage:['Sensor Carriage','Adjustable holder below the ball. It maintains the non-contact sensor position.'],
+patch:['10 GHz Patch Antenna','Conceptual copper patch on an RT5880 substrate. It represents the microwave sensing element.'],
+vna:['VNA / Electronics','Conceptual measurement enclosure representing the RF measurement electronics/VNA connection.'],
+frame:['Z-Slide / Frame','Mechanical structure and vertical adjustment that positions the sensor under the ball.'],
+motor:['Drive Motor','Top drive that rotates the test ball for circumferential scanning.'],
+base:['Base','Structural base supporting the complete inspection assembly.']
+};
+document.querySelectorAll('.part').forEach(btn=>btn.onclick=()=>{
+ const d=details[btn.dataset.part];document.getElementById('infoTitle').textContent=d[0];document.getElementById('infoText').textContent=d[1];document.getElementById('info').style.display='block';
+ document.querySelectorAll('.part').forEach(x=>x.classList.remove('active'));btn.classList.add('active');
+});
+document.getElementById('closeInfo').onclick=()=>document.getElementById('info').style.display='none';
 })();
-</script></body></html>
+</script>
+</body>
+</html>
