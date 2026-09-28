@@ -3,12 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Ball Bearing Crack Detection — Air-Coupled Ultrasonic Prototype</title>
+<title>Ball Bearing Crack Detection — Air-Coupled Ultrasonic 3D Model</title>
 <style>
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#07100d;color:#effff7;font-family:Inter,Arial,sans-serif}
-#app{height:100%;display:flex}.stage{position:relative;flex:1;min-width:0;overflow:hidden;background:radial-gradient(circle at 50% 42%,#183d32 0,#0b211b 52%,#050b09 100%)}
-canvas{width:100%;height:100%;display:block;cursor:grab}.drag{cursor:grabbing}
-.panel{width:365px;background:#0b1713;border-left:1px solid #315046;padding:18px;overflow:auto}
+#app{height:100%;display:flex}.stage{position:relative;flex:1;min-width:0;overflow:hidden;background:radial-gradient(circle at 50% 45%,#17372e 0,#0a1e18 55%,#040907 100%)}
+#scene{width:100%;height:100%;display:block}.panel{width:365px;background:#0b1713;border-left:1px solid #315046;padding:18px;overflow:auto}
 h1{font-size:20px;margin:0 0 5px}.sub{font-size:11px;color:#91bcae}.badge{display:inline-block;margin:8px 0;padding:5px 8px;border-radius:5px;background:#17392f;color:#a6ffe0;font-size:10px}
 h2{font-size:13px;text-transform:uppercase;letter-spacing:1px;color:#8ff0c9;margin:20px 0 9px}
 p,li,label{font-size:11px;line-height:1.5;color:#bdd0c8}.control{margin:12px 0}.control label{display:flex;justify-content:space-between}.control b{color:#fff}input{width:100%}
@@ -16,107 +15,279 @@ button{padding:8px 9px;margin:2px;background:#15342b;color:#edfff9;border:1px so
 .parts{display:grid;grid-template-columns:1fr 1fr;gap:5px}.part{margin:0;text-align:left}.part.active{border-color:#75f0c2;background:#1a4c3c}
 .readout{display:grid;grid-template-columns:1fr 1fr;gap:6px}.metric{padding:8px;border:1px solid #29483e;border-radius:6px;background:#09130f}.metric span{display:block;color:#86a89c;font-size:9px}.metric strong{font-size:13px}
 #hud{position:absolute;left:16px;top:16px;padding:10px 12px;background:#06130edb;border:1px solid #356051;border-radius:8px;font-size:11px;line-height:1.6;pointer-events:none}
-#status{color:#73f0be}#hint{position:absolute;left:16px;bottom:15px;color:#89a99e;font-size:10px}
-#legend{position:absolute;right:18px;top:18px;font-size:10px;color:#a4beb4;text-align:right;line-height:1.7;pointer-events:none}
-#info{position:absolute;right:18px;bottom:16px;width:260px;padding:11px;background:#07130fe8;border:1px solid #3a6557;border-radius:8px;display:none}
-#info b{color:#8ff0c9}#info .x{float:right;cursor:pointer;color:#9bb7ac}
+#hint{position:absolute;left:16px;bottom:15px;color:#89a99e;font-size:10px;pointer-events:none}#status{color:#73f0be}
 .warning{font-size:10px;color:#f0c97a!important}.note{font-size:10px;color:#a8c3b8}
+#info{position:absolute;right:18px;bottom:16px;width:270px;padding:11px;background:#07130fe8;border:1px solid #3a6557;border-radius:8px;display:none}
+#info b{color:#8ff0c9}#info .x{float:right;cursor:pointer;color:#9bb7ac}
+#loading{position:absolute;inset:0;display:grid;place-items:center;color:#a6ffe0;background:#07100dcc;font-size:12px;z-index:5}
 </style>
 </head>
 <body>
 <div id="app">
 <div class="stage" id="stage">
-<canvas id="c"></canvas>
-<div id="hud"><b>AIR-COUPLED ULTRASONIC INSPECTION</b><br>Mode: <span id="status">LIVE SIMULATION</span><br>Ball: <span id="spinHud">ROTATING</span> • Air gap: <span id="gapHud">10.0 mm</span></div>
-<div id="legend">1 — TEST BALL<br>2 — MOVABLE SUPPORTS<br>3 — ULTRASONIC CARRIAGE<br>4 — TX/RX TRANSDUCERS<br>5 — RECEIVER / PROCESSOR<br>6 — XYZ POSITIONING</div>
-<div id="hint">Drag = orbit view • Wheel = zoom • Click a part for details</div>
+<canvas id="scene"></canvas>
+<div id="loading">Loading 3D inspection model…</div>
+<div id="hud"><b>AIR-COUPLED ULTRASONIC INSPECTION</b><br>20 mm TEST BALL • CONTACTLESS TX/RX • FULL-COVERAGE CONCEPT<br>Rotation: <span id="spinHud">1.0×</span> • Air gap: <span id="gapHud">10.0 mm</span></div>
+<div id="hint">Drag = orbit • Wheel = zoom • Click a component for details</div>
 <div id="info"><span class="x" id="closeInfo">×</span><b id="infoTitle"></b><p id="infoText"></p></div>
 </div>
 <aside class="panel">
-<h1>Ball Bearing Crack Detection</h1><div class="sub">Air-coupled ultrasonic inspection concept</div>
-<span class="badge">CONTACTLESS ULTRASONIC • FULL-COVERAGE PROTOTYPE</span>
-<p>This is a separate concept from the microwave version. The bearing is inspected without physical probe contact using an air gap between the ultrasonic transducer pair and the metal surface.</p>
+<h1>Ball Bearing Crack Detection</h1><div class="sub">Air-coupled ultrasonic 3D working model</div>
+<span class="badge">MATCHED TO THE GENERATED CONCEPT DIAGRAM</span>
+<p>The geometry represents the same physical arrangement: spherical test ball, three repositionable support rollers, top drive, vertical Z adjustment, bottom X-Y ultrasonic carriage, air-coupled TX/RX transducers, receiver/processor, frame and base.</p>
 
 <h2>Live controls</h2>
 <div class="control"><label>Air stand-off <b id="gv">10.0 mm</b></label><input id="gap" type="range" min="5" max="30" step=".5" value="10"></div>
 <div class="control"><label>Ball rotation <b id="sv">1.0×</b></label><input id="speed" type="range" min="0" max="3" step=".1" value="1"></div>
-<div class="control"><label>Scan tilt <b id="tv">0°</b></label><input id="tilt" type="range" min="-30" max="30" step="1" value="0"></div>
+<div class="control"><label>Sensor tilt <b id="tv">0°</b></label><input id="tilt" type="range" min="-30" max="30" step="1" value="0"></div>
 <button id="pause">Pause rotation</button><button id="reset">Reset view</button><button id="crack">Hide crack</button><button id="supports">Reposition supports</button><button id="explode">Exploded view</button>
 
 <h2>Parts — click to identify</h2>
 <div class="parts">
 <button class="part" data-part="ball">1. Test Ball</button>
-<button class="part" data-part="rollers">2. Movable Supports</button>
-<button class="part" data-part="carriage">3. Ultrasonic Carriage</button>
-<button class="part" data-part="transducer">4. TX/RX Transducers</button>
-<button class="part" data-part="receiver">5. Receiver / Processor</button>
-<button class="part" data-part="xyz">6. XYZ Positioning</button>
-<button class="part" data-part="motor">7. Drive Motor</button>
-<button class="part" data-part="base">8. Base</button>
+<button class="part" data-part="rollers">2. Support Rollers</button>
+<button class="part" data-part="drive">3. Drive Motor</button>
+<button class="part" data-part="z">4. Z Adjustment</button>
+<button class="part" data-part="xy">5. X-Y Stage</button>
+<button class="part" data-part="transducer">6. TX/RX Head</button>
+<button class="part" data-part="receiver">7. Receiver / Processor</button>
+<button class="part" data-part="frame">8. Frame / Base</button>
 </div>
 
 <h2>Simulated measurement</h2>
 <div class="readout">
-<div class="metric"><span>Center frequency</span><strong id="freq">500 kHz</strong></div>
+<div class="metric"><span>Center frequency</span><strong>500 kHz*</strong></div>
 <div class="metric"><span>Echo / response</span><strong id="echo">−18.4 dB</strong></div>
 <div class="metric"><span>Scan angle</span><strong id="angle">0°</strong></div>
-<div class="metric"><span>Coverage</span><strong id="coverage">0%</strong></div>
+<div class="metric"><span>Surface coverage</span><strong id="coverage">0%</strong></div>
 </div>
-<p class="warning">Concept simulation only: displayed ultrasonic values are not live transducer measurements and do not prove crack-detection accuracy.</p>
-<p class="note">Important engineering constraint: air-coupled ultrasound has much weaker coupling from air into metal than contact ultrasonic testing. The physical prototype will require suitable high-sensitivity air-coupled transducers, careful alignment, amplification and signal processing.</p>
+<p class="warning">*Illustrative prototype value. The displayed response is simulated and does not prove crack-detection accuracy.</p>
+<p class="note">Air-coupled ultrasound has weak air-to-metal coupling compared with contact ultrasonic testing. A physical build needs suitable air-coupled transducers, alignment, amplification and signal processing.</p>
 
-<h2>Scanning strategy</h2>
+<h2>Reference geometry</h2>
 <ul>
-<li>Rotate the ball continuously.</li>
-<li>Move/tilt the ball so previously supported regions become exposed.</li>
-<li>Keep a known air stand-off between the transducers and ball.</li>
-<li>Use overlapping scan passes instead of a single pass.</li>
-<li>Record ball orientation and sensor position with every measurement.</li>
-</ul>
-
-<h2>Concept dimensions</h2>
-<ul>
-<li>Ball diameter: 20 mm</li>
-<li>Illustrative air stand-off: 10 mm</li>
-<li>Bottom-mounted non-contact TX/RX head</li>
-<li>XYZ positioning carriage</li>
-<li>Three repositionable support rollers</li>
+<li>Test ball: 20 mm diameter</li>
+<li>Three support rollers: repositionable</li>
+<li>Bottom TX/RX carriage: non-contact</li>
+<li>Initial illustrative air stand-off: 10 mm</li>
+<li>Vertical Z adjustment + X-Y positioning stage</li>
+<li>Top drive motor and spindle</li>
 </ul>
 </aside>
 </div>
-<script>
-(()=>{
-const canvas=document.getElementById('c'),stage=document.getElementById('stage'),ctx=canvas.getContext('2d');
-const gapEl=document.getElementById('gap'),speedEl=document.getElementById('speed'),tiltEl=document.getElementById('tilt');
-const gv=document.getElementById('gv'),sv=document.getElementById('sv'),tv=document.getElementById('tv');
-const gapHud=document.getElementById('gapHud'),spinHud=document.getElementById('spinHud');
-const freqEl=document.getElementById('freq'),echoEl=document.getElementById('echo'),angleEl=document.getElementById('angle'),coverageEl=document.getElementById('coverage');
-let yaw=.55,pitch=.48,zoom=1,gap=10,speed=1,tilt=0,paused=false,showCrack=true,relocate=false,exploded=false,spin=0,drag=false,lx=0,ly=0,last=performance.now(),covered=0;
 
-function project(x,y,z){const cy=Math.cos(yaw),sy=Math.sin(yaw),cp=Math.cos(pitch),sp=Math.sin(pitch);const X=x*cy-z*sy,Z=x*sy+z*cy,Y=y*cp-Z*sp,Z2=y*sp+Z*cp;const s=zoom*4.5/(1+Z2/260);return[canvas.clientWidth/2+X*s,canvas.clientHeight/2+105-Y*s,s,Z2]}
-function poly(points,fill,stroke='#385a4e'){const q=points.map(v=>project(...v));ctx.beginPath();ctx.moveTo(q[0][0],q[0][1]);for(let i=1;i<q.length;i++)ctx.lineTo(q[i][0],q[i][1]);ctx.closePath();ctx.fillStyle=fill;ctx.fill();ctx.strokeStyle=stroke;ctx.lineWidth=1;ctx.stroke();return q.reduce((a,b)=>a+b[3],0)/q.length}
-function box(cx,cy,cz,w,h,d,fill){const x=w/2,y=h/2,z=d/2,faces=[[[cx-x,cy-y,cz-z],[cx+x,cy-y,cz-z],[cx+x,cy+y,cz-z],[cx-x,cy+y,cz-z]],[[cx-x,cy-y,cz+z],[cx+x,cy-y,cz+z],[cx+x,cy+y,cz+z],[cx-x,cy+y,cz+z]],[[cx-x,cy-y,cz-z],[cx-x,cy-y,cz+z],[cx-x,cy+y,cz+z],[cx-x,cy+y,cz-z]],[[cx+x,cy-y,cz-z],[cx+x,cy-y,cz+z],[cx+x,cy+y,cz+z],[cx+x,cy+y,cz-z]],[[cx-x,cy+y,cz-z],[cx+x,cy+y,cz-z],[cx+x,cy+y,cz+z],[cx-x,cy+y,cz+z]]];faces.map(f=>({f,d:poly(f,fill)})).sort((a,b)=>a.d-b.d).forEach(o=>poly(o.f,fill))}
-function cyl(x,y,z,r,fill,rot=0){const pts=[],n=28;for(let i=0;i<n;i++){const a=i*2*Math.PI/n+rot;pts.push([x+Math.cos(a)*r,y,z+Math.sin(a)*r])}poly(pts,fill,'#607d72')}
-function label(text,x,y,z,dx,dy){const q=project(x,y,z),tx=q[0]+dx,ty=q[1]+dy;ctx.save();ctx.strokeStyle='#629b86';ctx.beginPath();ctx.moveTo(q[0],q[1]);ctx.lineTo(tx,ty);ctx.stroke();ctx.font='bold 11px Arial';const pad=5,w=ctx.measureText(text).width+pad*2;ctx.fillStyle='#071610e8';ctx.fillRect(tx,ty-14,w,21);ctx.strokeStyle='#467364';ctx.strokeRect(tx,ty-14,w,21);ctx.fillStyle='#e4fff5';ctx.fillText(text,tx+pad,ty+1);ctx.restore()}
-function sphere(cx,cy,cz,r){const q=project(cx,cy,cz),R=r*q[2]*.95,g=ctx.createRadialGradient(q[0]-R*.32,q[1]-R*.35,R*.05,q[0],q[1],R);g.addColorStop(0,'#fff');g.addColorStop(.2,'#e1ebe6');g.addColorStop(.55,'#85938d');g.addColorStop(1,'#303c37');ctx.beginPath();ctx.arc(q[0],q[1],R,0,Math.PI*2);ctx.fillStyle=g;ctx.fill();ctx.strokeStyle='#c5d5ce';ctx.lineWidth=1.5;ctx.stroke();if(showCrack){ctx.save();ctx.translate(q[0],q[1]);ctx.rotate(-.25+spin*.9);ctx.strokeStyle='#ff5144';ctx.lineWidth=Math.max(2,R*.045);ctx.shadowBlur=8;ctx.shadowColor='#ff5144';ctx.beginPath();ctx.moveTo(-R*.2,-R*.55);ctx.lineTo(-R*.04,-R*.27);ctx.lineTo(-R*.16,0);ctx.lineTo(R*.03,R*.25);ctx.lineTo(R*.15,R*.55);ctx.stroke();ctx.restore()}}
-function render(){const dpr=Math.min(devicePixelRatio||1,2),w=stage.clientWidth,h=stage.clientHeight;if(canvas.width!==Math.floor(w*dpr)||canvas.height!==Math.floor(h*dpr)){canvas.width=Math.floor(w*dpr);canvas.height=Math.floor(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0)}ctx.clearRect(0,0,w,h);
-const e=exploded;box(0,-5,0,120,8,100,'#263b34');box(-48,31,0,8,70,10,'#263b34');box(48,31,0,8,70,10,'#263b34');box(0,66,0,104,8,10,'#263b34');
-const spread=relocate?20:13;[[-spread,-8],[spread,-8],[0,15]].forEach(a=>cyl(a[0],e?-25:18,a[1],4,'#6b8179',spin*2));
-const sensorY=e?10:24+((gap-10)*.75);box(0,sensorY,0,44,8,32,'#405d53');box(0,sensorY+7,0,30,2,24,'#4b876f');
-/* two air-coupled transducers */
-box(-7,sensorY+9,0,9,5,12,'#6fd2b1');box(7,sensorY+9,0,9,5,12,'#6fd2b1');
-ctx.save();ctx.strokeStyle='#71efc1';ctx.lineWidth=1;ctx.setLineDash([5,5]);const q1=project(-7,sensorY+12,0),q2=project(7,sensorY+12,0),qb=project(0,38,0);ctx.beginPath();ctx.moveTo(q1[0],q1[1]);ctx.lineTo(qb[0]-25,qb[1]);ctx.moveTo(q2[0],q2[1]);ctx.lineTo(qb[0]+25,qb[1]);ctx.stroke();ctx.restore();
-box(0,e?8:42,0,28,20,22,'#4c9277');box(0,e?0:48,0,6,16,6,'#4c9277');box(34,-8,0,42,18,30,'#3d514a');sphere(0,48,0,10);
-label('TEST BALL • 20 mm',0,48,0,-105,-85);label('MOVABLE SUPPORTS',0,18,15,-105,18);label('ULTRASONIC CARRIAGE',0,sensorY,0,-115,42);label('TX / RX TRANSDUCERS',0,sensorY+10,0,80,28);label('RECEIVER / PROCESSOR',34,-8,0,65,20);label('XYZ POSITIONING',-48,35,0,-110,-25);label('DRIVE MOTOR',34,42,0,55,-25);label('BASE',-35,-5,0,-70,40);
+<script type="module">
+import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.180.0/+esm";
+import {OrbitControls} from "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/controls/OrbitControls.js/+esm";
+
+const canvas=document.getElementById("scene"),stage=document.getElementById("stage");
+const scene=new THREE.Scene(); scene.background=new THREE.Color(0x050b09);
+const camera=new THREE.PerspectiveCamera(42,1,0.1,1000); camera.position.set(105,75,125);
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true}); renderer.setPixelRatio(Math.min(devicePixelRatio,2)); renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+const controls=new OrbitControls(camera,canvas); controls.enableDamping=true; controls.target.set(0,25,0); controls.minDistance=55; controls.maxDistance=260;
+
+scene.add(new THREE.HemisphereLight(0xcfffe9,0x14251f,2.2));
+const key=new THREE.DirectionalLight(0xffffff,3.4); key.position.set(80,130,90); key.castShadow=true; scene.add(key);
+const fill=new THREE.DirectionalLight(0x6fe8c0,1.2); fill.position.set(-90,55,-70); scene.add(fill);
+
+const mats={
+base:new THREE.MeshStandardMaterial({color:0x273c35,metalness:.72,roughness:.3}),
+frame:new THREE.MeshStandardMaterial({color:0x40564e,metalness:.7,roughness:.3}),
+metal:new THREE.MeshStandardMaterial({color:0x9aa59f,metalness:.9,roughness:.2}),
+roller:new THREE.MeshStandardMaterial({color:0x6d817a,metalness:.8,roughness:.25}),
+green:new THREE.MeshStandardMaterial({color:0x3e9b78,metalness:.5,roughness:.25}),
+sensor:new THREE.MeshStandardMaterial({color:0x71d9b5,metalness:.45,roughness:.2}),
+dark:new THREE.MeshStandardMaterial({color:0x17241f,metalness:.65,roughness:.35}),
+red:new THREE.MeshBasicMaterial({color:0xff3f35})
+};
+
+function box(name,size,pos,mat,parent=scene){
+ const g=new THREE.Group(); g.name=name; const m=new THREE.Mesh(new THREE.BoxGeometry(...size),mat); m.castShadow=true;m.receiveShadow=true;g.add(m);g.position.set(...pos);parent.add(g);return g;
 }
-function animate(now){const dt=Math.min((now-last)/1000,.05);last=now;if(!paused)spin+=dt*speed*2.8;const deg=((spin*180/Math.PI)%360+360)%360;covered=Math.min(100,covered+dt*speed*2.2*(relocate?1.8:1));angleEl.textContent=Math.round(deg)+'°';gapHud.textContent=gap.toFixed(1)+' mm';spinHud.textContent=paused?'PAUSED':'ROTATING';const couplingPenalty=Math.max(0,gap-10)*.35;echoEl.textContent='−'+(18.4+couplingPenalty+(showCrack?0:5)).toFixed(1)+' dB';coverageEl.textContent=Math.round(covered)+'%';freqEl.textContent='500 kHz';render();requestAnimationFrame(animate)}
+function cyl(name,r,depth,pos,mat,rot=new THREE.Vector3(0,0,0),parent=scene){
+ const g=new THREE.Group();g.name=name;const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,depth,36),mat);m.castShadow=true;m.receiveShadow=true;g.add(m);g.position.set(...pos);g.rotation.copy(rot);parent.add(g);return g;
+}
+function beamLine(a,b,color=0x71efc1){
+ const geo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(...a),new THREE.Vector3(...b)]);
+ const line=new THREE.Line(geo,new THREE.LineDashedMaterial({color,dashSize:2,gapSize:1,transparent:true,opacity:.75}));
+ line.computeLineDistances();scene.add(line);return line;
+}
+
+const machine=new THREE.Group();scene.add(machine);
+const base=box("BASE",[120,8,100],[0,-4,0],mats.base,machine);
+const leftCol=box("LEFT FRAME",[8,72,10],[-50,32,0],mats.frame,machine);
+const rightCol=box("RIGHT FRAME",[8,72,10],[50,32,0],mats.frame,machine);
+const topBeam=box("TOP FRAME",[108,8,10],[0,68,0],mats.frame,machine);
+const topCross=box("TOP CROSS SUPPORT",[72,5,24],[0,61,0],mats.frame,machine);
+
+const ballAssembly=new THREE.Group();ballAssembly.name="TEST BALL ASSEMBLY";machine.add(ballAssembly);
+const ball=new THREE.Mesh(new THREE.SphereGeometry(10,64,48),mats.metal);ball.name="20 MM TEST BALL";ball.position.set(0,40,0);ball.castShadow=true;ballAssembly.add(ball);
+
+const crackCurve=new THREE.CatmullRomCurve3([
+ new THREE.Vector3(-1.8,46.8,8.6),new THREE.Vector3(-.4,44.0,9.6),new THREE.Vector3(-1.2,41.3,9.4),new THREE.Vector3(.5,38.4,9.5),new THREE.Vector3(1.7,35.8,8.4)
+]);
+const crackGeo=new THREE.TubeGeometry(crackCurve,24,.32,8,false);const crack=new THREE.Mesh(crackGeo,mats.red);crack.name="REFERENCE CRACK";ballAssembly.add(crack);
+
+const rollersGroup=new THREE.Group();rollersGroup.name="THREE REPOSITIONABLE SUPPORT ROLLERS";machine.add(rollersGroup);
+const rollerAngles=[Math.PI/2,Math.PI/2+2*Math.PI/3,Math.PI/2+4*Math.PI/3];
+const rollers=[];
+function makeRoller(i){
+ const g=new THREE.Group();g.name="SUPPORT ROLLER "+(i+1);
+ const w=new THREE.Mesh(new THREE.CylinderGeometry(4.5,4.5,14,36),mats.roller);w.rotation.z=Math.PI/2;w.castShadow=true;g.add(w);
+ const shaft=new THREE.Mesh(new THREE.CylinderGeometry(1.3,1.3,18,24),mats.metal);shaft.rotation.z=Math.PI/2;g.add(shaft);
+ rollersGroup.add(g);rollers.push(g);return g;
+}
+for(let i=0;i<3;i++)makeRoller(i);
+
+const driveGroup=new THREE.Group();driveGroup.name="TOP DRIVE";machine.add(driveGroup);
+const motor=box("DRIVE MOTOR",[22,18,22],[0,88,0],mats.dark,driveGroup);
+const motorCap=cyl("MOTOR CAP",8,5,[0,78,0],mats.metal,new THREE.Vector3(Math.PI/2,0,0),driveGroup);
+const spindle=cyl("DRIVE SPINDLE",3,16,[0,70,0],mats.metal,new THREE.Vector3(0,0,0),driveGroup);
+const drivePad=cyl("DRIVE PAD",7,4,[0,61.5,0],mats.roller,new THREE.Vector3(0,0,0),driveGroup);
+
+const zGroup=new THREE.Group();zGroup.name="Z ADJUSTMENT";machine.add(zGroup);
+const zRail=box("Z RAIL",[6,54,8],[30,39,0],mats.frame,zGroup);
+const zBlock=box("Z SLIDE BLOCK",[18,13,18],[30,42,0],mats.green,zGroup);
+const zKnob=cyl("Z ADJUSTER KNOB",4,5,[39,42,0],mats.metal,new THREE.Vector3(0,Math.PI/2,0),zGroup);
+
+const xyGroup=new THREE.Group();xyGroup.name="X-Y POSITIONING STAGE";machine.add(xyGroup);
+const yPlate=box("Y STAGE",[52,5,38],[0,4,0],mats.frame,xyGroup);
+const xPlate=box("X STAGE",[42,5,30],[0,9,0],mats.green,xyGroup);
+const carriage=box("ULTRASONIC CARRIAGE",[34,5,24],[0,15,0],mats.dark,xyGroup);
+
+const headGroup=new THREE.Group();headGroup.name="AIR COUPLED TX RX HEAD";xyGroup.add(headGroup);
+const headMount=box("HEAD MOUNT",[24,4,18],[0,20,0],mats.frame,headGroup);
+const tx=cyl("TX TRANSDUCER",4.2,6,[-6,24,0],mats.sensor,new THREE.Vector3(Math.PI/2,0,0),headGroup);
+const rx=cyl("RX TRANSDUCER",4.2,6,[6,24,0],mats.sensor,new THREE.Vector3(Math.PI/2,0,0),headGroup);
+const txFace=cyl("TX FACE",3.1,1,[-6,27,0],mats.metal,new THREE.Vector3(Math.PI/2,0,0),headGroup);
+const rxFace=cyl("RX FACE",3.1,1,[6,27,0],mats.metal,new THREE.Vector3(Math.PI/2,0,0),headGroup);
+
+const receiver=box("RECEIVER PROCESSOR",[34,18,28],[36,22,0],mats.dark,machine);
+const receiverPanel=box("PROCESSOR PANEL",[24,10,2],[36,22,14],mats.green,receiver);
+
+const beamGroup=new THREE.Group();beamGroup.name="ULTRASONIC AIR PATH";scene.add(beamGroup);
+function makeBeam(x){
+ const geo=new THREE.CylinderGeometry(1.8,3.4,16,24,1,true);const m=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({color:0x70e6c0,transparent:true,opacity:.13,side:THREE.DoubleSide}));
+ m.position.set(x,33,0);beamGroup.add(m);return m;
+}
+const b1=makeBeam(-6),b2=makeBeam(6);
+
+const wires=new THREE.Group();wires.name="CABLES";scene.add(wires);
+function cable(points){
+ const curve=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p)));
+ const tube=new THREE.Mesh(new THREE.TubeGeometry(curve,32,.45,8,false),new THREE.MeshStandardMaterial({color:0x263a33,roughness:.5}));
+ wires.add(tube);
+}
+cable([[ -6,27,0],[-6,30,8],[20,25,12],[28,22,10],[36,22,14]]);
+cable([[ 6,27,0],[8,31,-8],[22,26,-12],[30,22,-8],[36,22,14]]);
+
+const grid=new THREE.GridHelper(120,24,0x244238,0x10231c);grid.position.y=.15;scene.add(grid);
+
+const clickable=[ball,crack,...rollers, motor,zBlock,zRail,yPlate,xPlate,carriage,tx,rx,receiver,base,leftCol,rightCol,topBeam,drivePad];
+const raycaster=new THREE.Raycaster(),mouse=new THREE.Vector2();
+function componentFor(obj){
+ let o=obj;while(o&&o.parent){if(o.name&&(/TEST BALL|REFERENCE CRACK|SUPPORT ROLLER|DRIVE MOTOR|Z SLIDE|Z RAIL|Y STAGE|X STAGE|ULTRASONIC CARRIAGE|TX TRANSDUCER|RX TRANSDUCER|RECEIVER PROCESSOR|BASE|FRAME|DRIVE PAD/).test(o.name))return o;o=o.parent}return obj;
+}
+const details={
+"20 MM TEST BALL":["Test Ball","20 mm metallic spherical specimen shown at the center of the inspection rig."],
+"REFERENCE CRACK":["Reference Crack","Illustrative surface crack marker used only to demonstrate defect localization."],
+"SUPPORT ROLLER 1":["Support Rollers","Three rollers support and rotate the spherical specimen. Their positions can be changed between scan passes."],
+"SUPPORT ROLLER 2":["Support Rollers","Three rollers support and rotate the spherical specimen. Their positions can be changed between scan passes."],
+"SUPPORT ROLLER 3":["Support Rollers","Three rollers support and rotate the spherical specimen. Their positions can be changed between scan passes."],
+"DRIVE MOTOR":["Drive Motor","Top drive rotates the ball while maintaining the non-contact inspection geometry."],
+"Z SLIDE BLOCK":["Z Adjustment","Vertical adjustment changes the ultrasonic head position relative to the ball."],
+"Z RAIL":["Z Adjustment","Vertical rail provides the Z-axis travel shown in the concept."],
+"Y STAGE":["X-Y Positioning","Lower positioning stage carries the ultrasonic head."],
+"X STAGE":["X-Y Positioning","Lower positioning stage carries the ultrasonic head."],
+"ULTRASONIC CARRIAGE":["Ultrasonic Carriage","Carries the non-contact TX/RX transducer pair beneath the ball."],
+"TX TRANSDUCER":["TX/RX Transducers","Air-coupled ultrasonic transmitter. Physical transducer selection must be validated experimentally."],
+"RX TRANSDUCER":["TX/RX Transducers","Air-coupled ultrasonic receiver. Physical receiver sensitivity and alignment must be validated."],
+"RECEIVER PROCESSOR":["Receiver / Processor","Represents amplification, acquisition and signal-processing electronics."],
+"BASE":["Frame / Base","Structural base for the complete inspection mechanism."],
+"LEFT FRAME":["Frame / Base","Vertical structural frame."],
+"RIGHT FRAME":["Frame / Base","Vertical structural frame."],
+"TOP FRAME":["Frame / Base","Top structural beam supporting the drive assembly."]
+};
+
+function selectPart(obj){
+ const key=componentFor(obj)?.name||"";const d=details[key];if(!d)return;
+ document.getElementById("infoTitle").textContent=d[0];document.getElementById("infoText").textContent=d[1];document.getElementById("info").style.display="block";
+ document.querySelectorAll(".part").forEach(x=>x.classList.toggle("active",x.dataset.part===d[0]));
+}
+
+canvas.addEventListener("pointerdown",e=>{
+ const r=canvas.getBoundingClientRect();mouse.x=((e.clientX-r.left)/r.width)*2-1;mouse.y=-((e.clientY-r.top)/r.height)*2+1;raycaster.setFromCamera(mouse,camera);
+ const hit=raycaster.intersectObjects(clickable,true)[0];if(hit)selectPart(hit.object);
+});
+
+const gapEl=document.getElementById("gap"),speedEl=document.getElementById("speed"),tiltEl=document.getElementById("tilt");
+const gv=document.getElementById("gv"),sv=document.getElementById("sv"),tv=document.getElementById("tv"),gapHud=document.getElementById("gapHud"),spinHud=document.getElementById("spinHud");
+let gap=10,speed=1,tilt=0,paused=false,showCrack=true,relocate=false,exploded=false,angle=0,coverage=0,last=performance.now();
+
+function arrangeRollers(){
+ const radius=relocate?25:18;
+ rollers.forEach((g,i)=>{
+   const a=rollerAngles[i];g.position.set(Math.cos(a)*radius,relocate?3:0,Math.sin(a)*radius);
+   g.rotation.y=-a;
+ });
+}
+arrangeRollers();
+
+function updateGeometry(){
+ const sensorY=20+gap*.45;
+ headGroup.position.y=sensorY-20;
+ b1.position.y=sensorY+8;b2.position.y=sensorY+8;
+ const targetY=40-10;
+ const dist=sensorY+8-targetY;
+ b1.scale.y=Math.max(.35,Math.min(1.8,dist/16));b2.scale.y=b1.scale.y;
+ headGroup.rotation.z=THREE.MathUtils.degToRad(tilt);
+}
+
+gapEl.oninput=()=>{gap=+gapEl.value;gv.textContent=gap.toFixed(1)+" mm";updateGeometry()};
+speedEl.oninput=()=>{speed=+speedEl.value;sv.textContent=speed.toFixed(1)+"×"};
+tiltEl.oninput=()=>{tilt=+tiltEl.value;tv.textContent=tilt+"°";updateGeometry()};
+
+document.getElementById("pause").onclick=e=>{paused=!paused;e.target.textContent=paused?"Resume rotation":"Pause rotation"};
+document.getElementById("crack").onclick=e=>{showCrack=!showCrack;crack.visible=showCrack;e.target.textContent=showCrack?"Hide crack":"Show crack"};
+document.getElementById("supports").onclick=e=>{relocate=!relocate;arrangeRollers();coverage=0;e.target.textContent=relocate?"Restore supports":"Reposition supports"};
+document.getElementById("explode").onclick=e=>{
+ exploded=!exploded;e.target.textContent=exploded?"Collapse assembly":"Exploded view";
+ const k=exploded?1:0;
+ ballAssembly.position.y=20*k;driveGroup.position.y=18*k;zGroup.position.x=15*k;xyGroup.position.y=-10*k;receiver.position.x=48*k;
+ rollersGroup.position.y=-8*k;crack.visible=showCrack;
+};
+document.getElementById("reset").onclick=()=>{
+ camera.position.set(105,75,125);controls.target.set(0,25,0);controls.update();gap=10;speed=1;tilt=0;paused=false;relocate=false;exploded=false;coverage=0;
+ gapEl.value=10;speedEl.value=1;tiltEl.value=0;gv.textContent="10.0 mm";sv.textContent="1.0×";tv.textContent="0°";
+ ballAssembly.position.y=0;driveGroup.position.y=0;zGroup.position.x=0;xyGroup.position.y=0;receiver.position.x=0;rollersGroup.position.y=0;arrangeRollers();updateGeometry();
+};
+
+document.querySelectorAll(".part").forEach(btn=>btn.onclick=()=>{
+ const map={ball:"20 MM TEST BALL",rollers:"SUPPORT ROLLER 1",drive:"DRIVE MOTOR",z:"Z SLIDE BLOCK",xy:"X STAGE",transducer:"TX TRANSDUCER",receiver:"RECEIVER PROCESSOR",frame:"BASE"};
+ const obj=clickable.find(x=>x.name===map[btn.dataset.part]);if(obj)selectPart(obj);
+});
+document.getElementById("closeInfo").onclick=()=>document.getElementById("info").style.display="none";
+
+function resize(){const r=stage.getBoundingClientRect();renderer.setSize(r.width,r.height,false);camera.aspect=r.width/r.height;camera.updateProjectionMatrix()}
+new ResizeObserver(resize).observe(stage);resize();updateGeometry();document.getElementById("loading").style.display="none";
+
+function animate(now){
+ const dt=Math.min(.05,(now-last)/1000);last=now;
+ if(!paused){
+   angle=(angle+dt*speed*55)%360;
+   ballAssembly.rotation.y+=dt*speed*2.6;
+   driveGroup.rotation.y+=dt*speed*2.6;
+   rollers.forEach(r=>r.rotation.x+=dt*speed*4);
+   coverage=Math.min(100,coverage+dt*speed*(relocate?5:2.2));
+ }
+ const response=showCrack && Math.sin(angle*Math.PI/180*3)>.84 ? "Defect response" : "Normal";
+ document.getElementById("angle").textContent=Math.round(angle)+"°";
+ document.getElementById("coverage").textContent=Math.round(coverage)+"%";
+ document.getElementById("echo").textContent="−"+(18.4+Math.max(0,gap-10)*.35+(showCrack&&response!=="Normal"?4.8:0)).toFixed(1)+" dB";
+ gapHud.textContent=gap.toFixed(1)+" mm";spinHud.textContent=speed.toFixed(1)+"×";
+ controls.update();renderer.render(scene,camera);requestAnimationFrame(animate);
+}
 requestAnimationFrame(animate);
-gapEl.oninput=()=>{gap=+gapEl.value;gv.textContent=gap.toFixed(1)+' mm'};speedEl.oninput=()=>{speed=+speedEl.value;sv.textContent=speed.toFixed(1)+'×'};tiltEl.oninput=()=>{tilt=+tiltEl.value;tv.textContent=tilt+'°';pitch=.48+tilt*Math.PI/180*.3};
-document.getElementById('pause').onclick=e=>{paused=!paused;e.target.textContent=paused?'Resume rotation':'Pause rotation'};document.getElementById('crack').onclick=e=>{showCrack=!showCrack;e.target.textContent=showCrack?'Hide crack':'Show crack'};document.getElementById('supports').onclick=()=>{relocate=!relocate;covered=0};document.getElementById('explode').onclick=()=>{exploded=!exploded};document.getElementById('reset').onclick=()=>{yaw=.55;pitch=.48;zoom=1;gap=10;tilt=0;gapEl.value=10;gv.textContent='10.0 mm';tiltEl.value=0;tv.textContent='0°';covered=0};
-stage.addEventListener('pointerdown',e=>{if(e.target.closest&&e.target.closest('button'))return;drag=true;lx=e.clientX;ly=e.clientY;canvas.classList.add('drag');canvas.setPointerCapture(e.pointerId)});stage.addEventListener('pointermove',e=>{if(!drag)return;yaw+=(e.clientX-lx)*.008;pitch+=(e.clientY-ly)*.006;pitch=Math.max(-1.15,Math.min(1.15,pitch));lx=e.clientX;ly=e.clientY});stage.addEventListener('pointerup',()=>{drag=false;canvas.classList.remove('drag')});stage.addEventListener('wheel',e=>{e.preventDefault();zoom*=Math.exp(-e.deltaY*.001);zoom=Math.max(.45,Math.min(2.5,zoom))},{passive:false});
-const details={ball:['Test Ball','20 mm metallic spherical test specimen. The red line is only a visual crack marker for the simulation.'],rollers:['Movable Supports','Three support rollers hold and rotate the ball. Their repositioning exposes regions that were previously at support points.'],carriage:['Ultrasonic Carriage','Bottom carriage carrying the non-contact ultrasonic transmitter and receiver.'],transducer:['TX/RX Transducers','Conceptual air-coupled ultrasonic transmitter/receiver pair. The physical prototype needs suitable high-sensitivity air-coupled transducers.'],receiver:['Receiver / Processor','Represents amplification, acquisition and signal processing for received ultrasonic responses.'],xyz:['XYZ Positioning','Controls sensor position and helps maintain a repeatable stand-off and scan path.'],motor:['Drive Motor','Rotates the ball so different surface regions pass through the sensing zone.'],base:['Base','Structural platform supporting the inspection system.']};
-document.querySelectorAll('.part').forEach(btn=>btn.onclick=()=>{const d=details[btn.dataset.part];document.getElementById('infoTitle').textContent=d[0];document.getElementById('infoText').textContent=d[1];document.getElementById('info').style.display='block';document.querySelectorAll('.part').forEach(x=>x.classList.remove('active'));btn.classList.add('active')});document.getElementById('closeInfo').onclick=()=>document.getElementById('info').style.display='none';
-})();
 </script>
 </body>
 </html>
