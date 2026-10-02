@@ -3,131 +3,290 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Laser Ultrasonic Crack Detection — 3D Simulation</title>
+<title>Laser Ultrasonic Ball-Bearing Inspection — Engineering Prototype</title>
 <style>
-html,body{margin:0;height:100%;overflow:hidden;background:#05070b;color:#dce7f4;font-family:Inter,Arial,sans-serif}
-#app{width:100%;height:100%} canvas{display:block}
-#hud{position:fixed;left:18px;top:16px;z-index:5;width:330px;background:rgba(5,10,18,.88);border:1px solid #29415b;border-radius:14px;padding:16px;backdrop-filter:blur(10px);box-shadow:0 10px 40px #0008}
-h1{font-size:17px;margin:0 0 4px;color:#fff} .sub{font-size:11px;color:#8ea8bf;margin-bottom:12px}
-.row{display:flex;justify-content:space-between;gap:10px;font-size:12px;margin:7px 0}.v{color:#8fe8ff;font-family:monospace}
-label{display:block;font-size:11px;color:#9bb0c4;margin-top:10px} input[type=range]{width:100%}
-button{margin:8px 5px 0 0;padding:7px 10px;border-radius:8px;border:1px solid #36536e;background:#101b28;color:#dce7f4;cursor:pointer}button:hover{background:#18283a}
-#parts{position:fixed;right:18px;top:16px;z-index:5;width:235px;background:rgba(5,10,18,.88);border:1px solid #29415b;border-radius:14px;padding:14px}
-.part{padding:7px 8px;margin:4px 0;border-radius:7px;background:#0b1420;font-size:11px;cursor:pointer}.part:hover{background:#172638}
-#flow{position:fixed;right:18px;bottom:18px;z-index:5;width:235px;background:rgba(5,10,18,.88);border:1px solid #29415b;border-radius:14px;padding:14px;font-size:11px;line-height:1.5}
-#note{position:fixed;left:18px;bottom:16px;z-index:5;font-size:10px;color:#7890a5;max-width:520px}
+html,body{margin:0;height:100%;overflow:hidden;background:#e7ebee;color:#18212a;font-family:Arial,Helvetica,sans-serif}
+#app{position:fixed;inset:0}
+#hud,#parts,#status{position:fixed;background:rgba(248,250,251,.96);border:1px solid #aeb8c1;box-shadow:0 5px 18px rgba(30,40,50,.15);border-radius:6px}
+#hud{left:16px;top:16px;width:310px;padding:14px;z-index:5}
+#parts{right:16px;top:16px;width:235px;padding:12px;z-index:5}
+#status{left:16px;bottom:16px;padding:10px 13px;z-index:5;font:12px monospace;color:#394754}
+h1{font-size:15px;margin:0 0 3px;font-weight:700;color:#111820}
+.sub{font-size:10px;color:#657481;margin-bottom:12px}
+.row{display:flex;justify-content:space-between;margin:7px 0;font-size:11px}
+.v{font-family:monospace;color:#1e536c}
+label{display:block;margin-top:9px;font-size:10px;color:#5b6872}
+input[type=range]{width:100%}
+button,select{margin:7px 4px 0 0;padding:6px 8px;border:1px solid #9ca8b1;border-radius:4px;background:#fff;color:#26313a;font-size:11px}
+button:hover{background:#edf2f5}
+.part{padding:6px 7px;margin:3px 0;border:1px solid #d0d7dc;background:#fff;border-radius:3px;font-size:10px;cursor:pointer}
+.part:hover{background:#eef3f6}
+.note{font-size:9px;line-height:1.4;color:#66747f;margin-top:10px}
 </style>
 </head>
 <body>
 <div id="app"></div>
+
 <div id="hud">
-<h1>LASER ULTRASONIC CRACK INSPECTION</h1>
-<div class="sub">Interactive 3D conceptual prototype • contactless spherical scanning</div>
-<div class="row"><span>Ball diameter</span><span class="v">20 mm</span></div>
-<div class="row"><span>Rotation</span><span class="v" id="rotVal">0.0×</span></div>
-<div class="row"><span>Scan angle</span><span class="v" id="angVal">0°</span></div>
-<div class="row"><span>Signal amplitude</span><span class="v" id="sigVal">82 %</span></div>
-<div class="row"><span>Crack response</span><span class="v" id="crackVal">DETECTED</span></div>
-<div class="row"><span>Support rollers</span><span class="v" id="rollerVal">FIXED / ROTATING</span></div>
-<label>Ball rotation</label><input id="rot" type="range" min="0" max="3" step=".01" value="0">
-<label>Detection laser tilt</label><input id="tilt" type="range" min="-30" max="30" step="1" value="0">
-<button id="pause">Pause</button><button id="crack">Hide crack</button><button id="explode">Exploded view</button><button id="reset">Reset view</button>
+<h1>LASER ULTRASONIC INSPECTION RIG</h1>
+<div class="sub">Non-contact inspection of a 20 mm metallic bearing ball</div>
+<div class="row"><span>Ball diameter</span><span class="v">20.00 mm</span></div>
+<div class="row"><span>Support condition</span><span class="v" id="supportVal">PASS 1 / FIXED</span></div>
+<div class="row"><span>Ball rotation</span><span class="v" id="rotVal">0.0 rev</span></div>
+<div class="row"><span>Inspection signal</span><span class="v" id="sigVal">STABLE</span></div>
+
+<label>Ball rotation / scan progress</label>
+<input id="rot" type="range" min="0" max="3" step=".01" value="0">
+
+<label>Detection laser angle</label>
+<input id="tilt" type="range" min="-18" max="18" step="1" value="0">
+
+<label>Support index — change only between scan passes</label>
+<select id="pass">
+<option value="0">Pass 1 — normal support</option>
+<option value="1">Pass 2 — supports indexed</option>
+<option value="2">Pass 3 — supports indexed</option>
+</select>
+
+<button id="pause">Pause scan</button>
+<button id="reposition">Index supports</button>
+<button id="crack">Hide crack</button>
+<button id="reset">Reset</button>
+
+<div class="note">
+During a scan the three support rollers do not translate. They only rotate with the ball. 
+For full spherical coverage, scanning is performed in indexed passes so the roller contact regions can be exposed between passes.
 </div>
-<div id="parts"><b>3D SYSTEM COMPONENTS</b>
-<div class="part" data-id="ball">● TEST BALL — 20 mm</div>
-<div class="part" data-id="rollers">● 3 SUPPORT ROLLERS</div>
-<div class="part" data-id="gen">● GENERATION LASER</div>
-<div class="part" data-id="det">● DETECTION LASER</div>
-<div class="part" data-id="inter">● INTERFEROMETER</div>
-<div class="part" data-id="proc">● SIGNAL PROCESSOR</div>
-<div class="part" data-id="frame">● FRAME + BASE</div>
-<div class="part" data-id="motor">● DRIVE MOTOR</div>
 </div>
-<div id="flow"><b>SIGNAL FLOW</b><br>Generation laser → thermoelastic ultrasonic wave → cracked metal surface → detection laser → interferometer → signal conditioning → crack detection / position map</div>
-<div id="note">Rollers remain fixed during the scan and rotate only to represent rolling support. They are not a scanning actuator. Conceptual simulation only. Laser wavelength, pulse energy, interferometer model and detection performance are illustrative and must be experimentally validated. Use appropriate laser safety controls for any physical prototype.</div>
+
+<div id="parts">
+<b style="font-size:11px">SYSTEM COMPONENTS</b>
+<div class="part" data-id="ball">TEST BALL — Ø20 mm</div>
+<div class="part" data-id="rollers">3 SUPPORT ROLLERS</div>
+<div class="part" data-id="gen">GENERATION LASER</div>
+<div class="part" data-id="det">DETECTION LASER</div>
+<div class="part" data-id="inter">INTERFEROMETER</div>
+<div class="part" data-id="proc">SIGNAL PROCESSOR</div>
+<div class="part" data-id="motor">DRIVE MOTOR</div>
+<div class="part" data-id="frame">FRAME / BASE</div>
+</div>
+
+<div id="status">
+SCAN: <b id="scanState">RUNNING</b> &nbsp;|&nbsp;
+ROLLERS: <b>FIXED DURING PASS</b> &nbsp;|&nbsp;
+OPTICS: <b>NON-CONTACT</b>
+</div>
+
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/+esm';
 import {OrbitControls} from 'https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/controls/OrbitControls.js/+esm';
 
-const scene=new THREE.Scene(); scene.background=new THREE.Color(0x05070b);
-const camera=new THREE.PerspectiveCamera(48,innerWidth/innerHeight,.1,1000); camera.position.set(105,78,105);
-const renderer=new THREE.WebGLRenderer({antialias:true}); renderer.setPixelRatio(Math.min(devicePixelRatio,2)); renderer.setSize(innerWidth,innerHeight); renderer.shadowMap.enabled=true; document.querySelector('#app').appendChild(renderer.domElement);
-const controls=new OrbitControls(camera,renderer.domElement); controls.enableDamping=true; controls.target.set(0,25,0);
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0xe7ebee);
+scene.fog=new THREE.Fog(0xe7ebee,180,360);
 
-scene.add(new THREE.HemisphereLight(0xbad8ff,0x10151d,2.2));
-const key=new THREE.DirectionalLight(0xffffff,3); key.position.set(50,90,40); key.castShadow=true; scene.add(key);
-const red=new THREE.PointLight(0xff304f,7,100); red.position.set(-45,65,5); scene.add(red);
-const cyan=new THREE.PointLight(0x20d9ff,5,80); cyan.position.set(35,40,-15); scene.add(cyan);
+const camera=new THREE.PerspectiveCamera(42,innerWidth/innerHeight,.1,500);
+camera.position.set(112,78,112);
 
-const mat=(c,m=0.3)=>new THREE.MeshStandardMaterial({color:c,metalness:m,roughness:.32});
-const baseMat=mat(0x273342,.8), steel=mat(0x667789,.9), dark=mat(0x111820,.7);
-const laserRed=new THREE.LineBasicMaterial({color:0xff163f,transparent:true,opacity:.95});
-const laserCyan=new THREE.LineBasicMaterial({color:0x20eaff,transparent:true,opacity:.95});
-const waveMat=new THREE.LineBasicMaterial({color:0xffd35a,transparent:true,opacity:.65});
-const groups={}; const makeGroup=(id)=>groups[id]=new THREE.Group();
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(innerWidth,innerHeight);
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+document.querySelector('#app').appendChild(renderer.domElement);
 
-function box(id,x,y,z,sx,sy,sz,material){const g=makeGroup(id);const m=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz),material);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;g.add(m);scene.add(g);return g}
-box('base',0,3,0,125,6,95,baseMat);
-box('frame',-50,40,0,8,75,8,steel); box('frame2',50,40,0,8,75,8,steel);
-box('frameTop',0,76,0,108,8,8,steel);
-box('motor',0,92,0,30,16,26,dark);
-const spindle=new THREE.Mesh(new THREE.CylinderGeometry(6,6,14,32),steel); spindle.rotation.x=Math.PI/2; spindle.position.set(0,81,0); groups.motor.add(spindle);
-const drivePad=new THREE.Mesh(new THREE.CylinderGeometry(7,7,3,32),dark); drivePad.rotation.x=Math.PI/2; drivePad.position.set(0,60,0); groups.motor.add(drivePad);
+const controls=new OrbitControls(camera,renderer.domElement);
+controls.enableDamping=true;
+controls.target.set(0,38,0);
 
-const ballG=makeGroup('ball'); const ball=new THREE.Mesh(new THREE.SphereGeometry(10,64,64),mat(0x9aa8b5,.95)); ball.position.set(0,49,0); ball.castShadow=true; ballG.add(ball);
-const crackCurve=new THREE.CatmullRomCurve3([new THREE.Vector3(-5,51,8.7),new THREE.Vector3(-1,48,9.7),new THREE.Vector3(3,45,9.1),new THREE.Vector3(6,43,7.7)]);
-const crack=new THREE.Mesh(new THREE.TubeGeometry(crackCurve,32,.38,8,false),new THREE.MeshBasicMaterial({color:0xff263f})); crack.position.set(0,0,0); ballG.add(crack); scene.add(ballG);
+scene.add(new THREE.HemisphereLight(0xffffff,0x78838b,2.0));
+const key=new THREE.DirectionalLight(0xffffff,3.0);
+key.position.set(70,120,70); key.castShadow=true; scene.add(key);
 
-const rollerPositions=[[-15,35,9],[15,35,9],[0,35,-13]];
-const rollers=makeGroup('rollers'); rollerPositions.forEach(p=>{const r=new THREE.Mesh(new THREE.CylinderGeometry(4,4,16,32),steel);r.rotation.z=Math.PI/2;r.position.set(...p);r.castShadow=true;rollers.add(r)});scene.add(rollers);
-// Support rollers stay fixed in position during a scan. Their only motion is spinning at the contact surface.
-const rollerSpinDirection=[1,-1,1];
+const metal=(c,rough=.35)=>new THREE.MeshStandardMaterial({color:c,metalness:.85,roughness:rough});
+const black=new THREE.MeshStandardMaterial({color:0x20272d,metalness:.75,roughness:.28});
+const aluminum=metal(0x8f9aa3,.28);
+const bearingMat=metal(0xb9c0c5,.2);
+const baseMat=metal(0x5f6b73,.55);
+const redMat=new THREE.MeshStandardMaterial({color:0xb32632,metalness:.5,roughness:.3});
+const cyanMat=new THREE.MeshStandardMaterial({color:0x237b91,metalness:.55,roughness:.25});
+const brass=metal(0xb08a45,.25);
 
-function laserUnit(id,x,y,z,color){const g=makeGroup(id);const body=new THREE.Mesh(new THREE.CylinderGeometry(4,4,14,32),dark);body.rotation.z=Math.PI/2;body.position.set(x,y,z);g.add(body);const lens=new THREE.Mesh(new THREE.SphereGeometry(2.7,24,16),new THREE.MeshBasicMaterial({color}));lens.position.set(x+(x>0?-7:7),y,z);g.add(lens);scene.add(g);return g}
-laserUnit('gen',-48,62,5,0xff2447);
-laserUnit('det',48,68,5,0x21eaff);
+const groups={};
+function G(id){const g=new THREE.Group();groups[id]=g;scene.add(g);return g}
+function cube(parent,s,p,m){const q=new THREE.Mesh(new THREE.BoxGeometry(...s),m);q.position.set(...p);q.castShadow=true;q.receiveShadow=true;parent.add(q);return q}
+function cyl(parent,r,depth,p,m,axis='y'){const q=new THREE.Mesh(new THREE.CylinderGeometry(r,r,depth,40),m);q.position.set(...p);if(axis==='x')q.rotation.z=Math.PI/2;if(axis==='z')q.rotation.x=Math.PI/2;q.castShadow=true;q.receiveShadow=true;parent.add(q);return q}
 
-function beam(a,b,material){const geo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(...a),new THREE.Vector3(...b)]);const line=new THREE.Line(geo,material);scene.add(line);return line}
-const genBeam=beam([-41,62,5],[-7,50,3],laserRed);
-const detBeam=beam([41,68,5],[6,50,4],laserCyan);
+const base=G('frame');
+cube(base,[130,7,100],[0,3,0],baseMat);
+cube(base,[9,72,9],[-54,39,0],aluminum);
+cube(base,[9,72,9],[54,39,0],aluminum);
+cube(base,[108,8,9],[0,76,0],aluminum);
+cube(base,[108,5,8],[0,20,0],aluminum);
+cube(base,[10,52,10],[-48,42,0],aluminum);
+cube(base,[10,52,10],[48,42,0],aluminum);
 
-const waveGroup=new THREE.Group(); for(let i=0;i<9;i++){const rr=3+i*1.8;const pts=[];for(let j=0;j<=48;j++){const a=j/48*Math.PI*2;pts.push(new THREE.Vector3(Math.cos(a)*rr,49-i*.6,Math.sin(a)*rr));}waveGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),waveMat));}scene.add(waveGroup);
+const ballG=G('ball');
+const ball=new THREE.Mesh(new THREE.SphereGeometry(10,72,48),bearingMat);
+ball.position.set(0,49,0); ball.castShadow=true; ball.receiveShadow=true; ballG.add(ball);
 
-box('inter',72,45,-12,22,12,18,dark);
-box('proc',72,27,-12,30,14,22,dark);
-beam([6,51,4],[63,45,-7],laserCyan); beam([63,45,-7],[63,33,-9],laserCyan);
+const equator=new THREE.Line(
+ new THREE.BufferGeometry().setFromPoints([...Array(97)].map((_,i)=>{const a=i/96*Math.PI*2;return new THREE.Vector3(10*Math.cos(a),0,10*Math.sin(a))})),
+ new THREE.LineBasicMaterial({color:0x6e7880,transparent:true,opacity:.35})
+);
+equator.position.y=49; ballG.add(equator);
 
-const cable=beam([-41,62,5],[-28,20,20],new THREE.LineBasicMaterial({color:0x777f88}));
-const cable2=beam([41,68,5],[72,45,-12],new THREE.LineBasicMaterial({color:0x777f88}));
+const crackCurve=new THREE.CatmullRomCurve3([
+ new THREE.Vector3(-4.8,51.3,8.45),
+ new THREE.Vector3(-2.0,49.4,9.25),
+ new THREE.Vector3(1.2,47.0,9.25),
+ new THREE.Vector3(4.5,45.0,8.1)
+]);
+const crack=new THREE.Mesh(new THREE.TubeGeometry(crackCurve,40,.30,8,false),
+ new THREE.MeshStandardMaterial({color:0x9d1c29,roughness:.55}));
+ballG.add(crack);
 
-const labels=[];
-function label(text,pos){const c=document.createElement('canvas');c.width=512;c.height=64;const x=c.getContext('2d');x.fillStyle='#dff7ff';x.font='bold 28px Arial';x.fillText(text,8,42);const t=new THREE.CanvasTexture(c);const s=new THREE.Sprite(new THREE.SpriteMaterial({map:t,transparent:true,depthTest:false}));s.scale.set(24,3,1);s.position.set(...pos);scene.add(s);labels.push(s);return s}
-label('20 mm METAL BALL',[0,64,0]); label('GENERATION LASER',[-48,72,5]); label('DETECTION LASER',[48,78,5]); label('INTERFEROMETER',[72,55,-12]); label('SIGNAL PROCESSING',[72,37,-12]); label('3 SUPPORT ROLLERS',[0,31,16]); label('DRIVE MOTOR',[0,103,0]);
+const rollers=G('rollers');
+const rollerRadius=4;
+const rollerAxisRadius=Math.sqrt((10+rollerRadius)**2-10**2); // 9.798 mm
+const rollerY=39;
+const rollerAngles=[Math.PI/6,Math.PI/6+2*Math.PI/3,Math.PI/6+4*Math.PI/3];
+const rollerMeshes=[];
+rollerAngles.forEach((a,i)=>{
+ const x=rollerAxisRadius*Math.cos(a), z=rollerAxisRadius*Math.sin(a);
+ const r=cyl(rollers,rollerRadius,22,[x,rollerY,z],aluminum,'x');
+ // Cylinder axis is tangent to the support ring, not radial.
+ const tangent=new THREE.Vector3(-Math.sin(a),0,Math.cos(a));
+ r.quaternion.setFromUnitVectors(new THREE.Vector3(1,0,0),tangent);
+ rollerMeshes.push(r);
+});
+ 
+// top drive: vertical spindle presses on the ball without touching the optical scan path
+const motor=G('motor');
+cube(motor,[28,18,24],[0,91,0],black);
+cyl(motor,5,16,[0,80,0],aluminum,'y');
+cyl(motor,7,3,[0,69,0],black,'y');
+const driveTip=cyl(motor,5.5,2.5,[0,65.6,0],brass,'y');
 
-let paused=false,showCrack=true,exploded=false,rot=0,tilt=0;
+// Optical heads are fixed to rigid brackets. They do not move during rotation.
+const gen=G('gen'), det=G('det');
+function laserHead(g,p,m){
+ cube(g,[12,10,10],p,black);
+ cyl(g,4,9,[p[0],p[1],p[2]],m,'x');
+}
+laserHead(gen,[-43,55,28],redMat);
+laserHead(det,[43,61,28],cyanMat);
+
+cube(gen,[7,48,7],[-33,35,28],aluminum);
+cube(det,[7,54,7],[33,39,28],aluminum);
+
+const genTarget=new THREE.Vector3(-5.4,50.2,8.35);
+const detTarget=new THREE.Vector3(5.4,50.2,8.35);
+function line(a,b,m){
+ const geo=new THREE.BufferGeometry().setFromPoints([a,b]);
+ const l=new THREE.Line(geo,m); scene.add(l); return l;
+}
+const genBeam=line(new THREE.Vector3(-37,55,28),genTarget,new THREE.LineBasicMaterial({color:0xc21f31,transparent:true,opacity:.9}));
+const detBeam=line(new THREE.Vector3(37,61,28),detTarget,new THREE.LineBasicMaterial({color:0x16788f,transparent:true,opacity:.9}));
+
+// Detection return path to interferometer and processor.
+const inter=G('inter'), proc=G('proc');
+cube(inter,[20,14,18],[70,50,8],black);
+cube(proc,[30,15,22],[70,30,8],black);
+cyl(inter,4,6,[58,50,8],cyanMat,'x');
+line(detTarget,new THREE.Vector3(60,50,8),new THREE.LineBasicMaterial({color:0x16788f,transparent:true,opacity:.75}));
+line(new THREE.Vector3(60,50,8),new THREE.Vector3(70,42,8),new THREE.LineBasicMaterial({color:0x697780,transparent:true,opacity:.7}));
+line(new THREE.Vector3(70,42,8),new THREE.Vector3(70,38,8),new THREE.LineBasicMaterial({color:0x697780,transparent:true,opacity:.7}));
+
+// Scan spot and ultrasonic wavefronts on the ball.
+const scanSpot=new THREE.Mesh(new THREE.SphereGeometry(.65,24,16),new THREE.MeshBasicMaterial({color:0xffc400}));
+scanSpot.position.copy(genTarget); scene.add(scanSpot);
+
+const waveGroup=new THREE.Group(); scene.add(waveGroup);
+for(let i=0;i<7;i++){
+ const r=1.5+i*1.2;
+ const pts=[];
+ for(let j=0;j<=48;j++){const a=j/48*Math.PI*2;pts.push(new THREE.Vector3(r*Math.cos(a),49,r*Math.sin(a)))}
+ waveGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),
+  new THREE.LineBasicMaterial({color:0xd39a22,transparent:true,opacity:.22})));
+}
+
+// Indexed support positions: only the support assembly rotates around the ball between passes.
+// It is locked during a scan pass.
+const supportStates=[0,2*Math.PI/3,4*Math.PI/3];
+let supportIndex=0;
+function setSupportIndex(index){
+ supportIndex=index%3;
+ rollers.rotation.y=supportStates[supportIndex];
+ document.querySelector('#supportVal').textContent='PASS '+(supportIndex+1)+' / '+(supportIndex===0?'FIXED':'INDEXED');
+}
+setSupportIndex(0);
+
+let paused=false,showCrack=true,rot=0,tilt=0;
 const rotEl=document.querySelector('#rot'),tiltEl=document.querySelector('#tilt');
-rotEl.oninput=()=>{rot=+rotEl.value;document.querySelector('#rotVal').textContent=rot.toFixed(1)+'×'};
-tiltEl.oninput=()=>{tilt=+tiltEl.value;document.querySelector('#angVal').textContent=tilt+'°';detBeam.rotation.z=THREE.MathUtils.degToRad(tilt);};
-document.querySelector('#pause').onclick=()=>{paused=!paused;document.querySelector('#pause').textContent=paused?'Resume':'Pause'};
-document.querySelector('#crack').onclick=()=>{showCrack=!showCrack;crack.visible=showCrack;document.querySelector('#crack').textContent=showCrack?'Hide crack':'Show crack';document.querySelector('#crackVal').textContent=showCrack?'DETECTED':'NO CRACK SHOWN'};
-document.querySelector('#explode').onclick=()=>{exploded=!exploded; groups.gen.position.x=exploded?-22:0;groups.det.position.x=exploded?22:0;groups.inter.position.x=exploded?18:0;groups.proc.position.x=exploded?18:0;groups.rollers.position.y=exploded?8:0;waveGroup.position.y=exploded?10:0};
-document.querySelector('#reset').onclick=()=>{camera.position.set(105,78,105);controls.target.set(0,25,0);controls.update();rotEl.value=0;rot=0;tiltEl.value=0;tilt=0;rollers.children.forEach((r)=>{r.rotation.x=0});document.querySelector('#rotVal').textContent='0.0×';document.querySelector('#angVal').textContent='0°'};
+rotEl.oninput=()=>{rot=+rotEl.value;document.querySelector('#rotVal').textContent=rot.toFixed(2)+' rev'};
+tiltEl.oninput=()=>{
+ tilt=+tiltEl.value;
+ document.querySelector('#angVal')?.remove();
+ // rotate the detection head and its beam around its own local vertical bracket axis
+ det.rotation.y=THREE.MathUtils.degToRad(tilt);
+ const target=new THREE.Vector3(5.4,50.2,8.35);
+ detBeam.geometry.setFromPoints([new THREE.Vector3(37,61,28),target]);
+};
+document.querySelector('#pause').onclick=()=>{
+ paused=!paused;
+ document.querySelector('#pause').textContent=paused?'Resume scan':'Pause scan';
+ document.querySelector('#scanState').textContent=paused?'PAUSED':'RUNNING';
+};
+document.querySelector('#reposition').onclick=()=>{
+ if(!paused){
+   paused=true;
+   document.querySelector('#pause').textContent='Resume scan';
+   document.querySelector('#scanState').textContent='PAUSED FOR INDEXING';
+ }
+ setSupportIndex(supportIndex+1);
+};
+document.querySelector('#pass').onchange=e=>{setSupportIndex(+e.target.value);};
+document.querySelector('#crack').onclick=()=>{
+ showCrack=!showCrack; crack.visible=showCrack;
+ document.querySelector('#crack').textContent=showCrack?'Hide crack':'Show crack';
+};
+document.querySelector('#reset').onclick=()=>{
+ camera.position.set(112,78,112); controls.target.set(0,38,0); controls.update();
+ rot=0; tilt=0; supportIndex=0; rotEl.value=0; tiltEl.value=0;
+ rollers.rotation.y=0; det.rotation.y=0; crack.visible=true; showCrack=true;
+ paused=false; document.querySelector('#pause').textContent='Pause scan';
+ document.querySelector('#scanState').textContent='RUNNING';
+ document.querySelector('#supportVal').textContent='PASS 1 / FIXED';
+};
 
-document.querySelectorAll('.part').forEach(e=>e.onclick=()=>{const g=groups[e.dataset.id];if(!g)return;const p=new THREE.Vector3();g.getWorldPosition(p);controls.target.copy(p);camera.position.copy(p.clone().add(new THREE.Vector3(45,30,45)));});
-const ray=new THREE.Raycaster(),mouse=new THREE.Vector2();
-renderer.domElement.addEventListener('click',ev=>{mouse.x=ev.clientX/innerWidth*2-1;mouse.y=-(ev.clientY/innerHeight)*2+1;ray.setFromCamera(mouse,camera);const hit=ray.intersectObjects(scene.children,true)[0];if(hit){hit.object.scale.multiplyScalar(1.06)}});
+document.querySelectorAll('.part').forEach(e=>e.onclick=()=>{
+ const g=groups[e.dataset.id]; if(!g)return;
+ const p=new THREE.Vector3();g.getWorldPosition(p);
+ controls.target.copy(p); camera.position.copy(p.clone().add(new THREE.Vector3(42,25,42)));
+});
 
-function animate(t){requestAnimationFrame(animate);if(!paused){
-  const ballAngular=rot*Math.PI*2 + t*.00025;
-  ballG.rotation.y=ballAngular;
-  // The rollers do not translate or orbit. They spin in place to represent rolling contact with the rotating ball.
-  rollers.children.forEach((r,i)=>{r.rotation.x=ballAngular*0.9*rollerSpinDirection[i];});
-  waveGroup.rotation.y=t*.00035;
-  const amp=showCrack?82+8*Math.sin(t*.004):8;
-  document.querySelector('#sigVal').textContent=Math.round(amp)+' %'
-}controls.update();renderer.render(scene,camera)}
+function animate(t){
+ requestAnimationFrame(animate);
+ if(!paused){
+   const ballAngle=rot*Math.PI*2+t*.00018;
+   ballG.rotation.y=ballAngle;
+   // Rollers spin in place. Their centres do not translate during the pass.
+   rollerMeshes.forEach((r,i)=>{r.rotation.x=ballAngle*(i%2?-1:1);});
+   waveGroup.rotation.y=t*.0003;
+   scanSpot.material.opacity=.45+.35*Math.sin(t*.006)**2;
+   const response=showCrack?(72+18*Math.sin(t*.003)):(8+2*Math.sin(t*.003));
+   document.querySelector('#sigVal').textContent=showCrack?Math.round(response)+' % / CRACK':'LOW / NO CRACK';
+ }
+ controls.update(); renderer.render(scene,camera);
+}
 animate(0);
-addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+
+addEventListener('resize',()=>{
+ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix();
+ renderer.setSize(innerWidth,innerHeight);
+});
 </script>
 </body>
 </html>
