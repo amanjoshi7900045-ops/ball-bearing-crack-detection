@@ -188,6 +188,105 @@ function makeRoller(i){
 }
 for(let i=0;i<3;i++)makeRoller(i);
 
+// Fixed bearing/pedestal supports for every roller axle.
+const rollerSupports=new THREE.Group();
+rollerSupports.name="ROLLER BEARING SUPPORTS";
+machine.add(rollerSupports);
+
+function addRollerSupport(i){
+ const g=new THREE.Group();
+ g.name="ROLLER "+(i+1)+" BEARING SUPPORT";
+ const radial=new THREE.Vector3(Math.cos(rollerAngles[i]),0,Math.sin(rollerAngles[i]));
+ const tangent=new THREE.Vector3(-Math.sin(rollerAngles[i]),0,Math.cos(rollerAngles[i])).normalize();
+ const axisEnd=radial.clone().multiplyScalar(ROLLER_LEN/2+2);
+
+ // Two upright bearing blocks at both ends of the roller shaft.
+ [-1,1].forEach(side=>{
+   const p=radial.clone().multiplyScalar(14.15).add(
+     tangent.clone().multiplyScalar(side*(ROLLER_LEN/2+2))
+   );
+   p.y=25.5;
+   const block=box("BEARING BLOCK",[5,9,7],[p.x,p.y,p.z],mats.dark,g);
+   const bearing=cyl(
+     "ROLLER BEARING",2.4,3,
+     [p.x,p.y,p.z],mats.metal,
+     new THREE.Vector3(Math.PI/2,0,0),g
+   );
+ });
+ rollerSupports.add(g);
+}
+for(let i=0;i<3;i++)addRollerSupport(i);
+
+// Short drive/encoder cables physically routed from each roller bearing support
+// toward the receiver/processor. These are illustrative sensor cables.
+const rollerCables=new THREE.Group();
+rollerCables.name="ROLLER SENSOR CABLES";
+scene.add(rollerCables);
+function rollerCable(points){
+ const curve=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p)));
+ const tube=new THREE.Mesh(
+   new THREE.TubeGeometry(curve,24,.35,8,false),
+   new THREE.MeshStandardMaterial({color:0x17221e,roughness:.6,metalness:.15})
+ );
+ tube.castShadow=true;
+ rollerCables.add(tube);
+}
+for(let i=0;i<3;i++){
+ const a=rollerAngles[i];
+ const radial=new THREE.Vector3(Math.cos(a),0,Math.sin(a));
+ const tangent=new THREE.Vector3(-Math.sin(a),0,Math.cos(a));
+ const p=radial.clone().multiplyScalar(14.15);
+ p.y=25.5;
+ const side=tangent.clone().multiplyScalar((i===0?1:-1)*10);
+ rollerCable([
+   [p.x,p.y,p.z],
+   [p.x+side.x,p.y+2,p.z+side.z],
+   [24,22+(i*2),12-(i*8)],
+   [36,22,14]
+ ]);
+}
+
+// Engineering labels: each callout states the physical purpose.
+const labelsGroup=new THREE.Group();
+labelsGroup.name="ENGINEERING PART LABELS";
+scene.add(labelsGroup);
+const labelCanvas=document.createElement("canvas");
+labelCanvas.width=1024; labelCanvas.height=256;
+const labelCtx=labelCanvas.getContext("2d");
+function makeLabel(text1,text2){
+ const c=document.createElement("canvas");c.width=512;c.height=128;
+ const x=c.getContext("2d");
+ x.fillStyle="rgba(5,15,11,.94)";x.fillRect(0,0,512,128);
+ x.strokeStyle="#71d9b5";x.lineWidth=3;x.strokeRect(2,2,508,124);
+ x.font="bold 25px Arial";x.fillStyle="#9fffe0";x.fillText(text1,18,38);
+ x.font="20px Arial";x.fillStyle="#d9eee6";
+ const words=text2.split(" ");let line="",y=70;
+ for(const word of words){
+   const test=line?line+" "+word:word;
+   if(x.measureText(test).width>475){x.fillText(line,18,y);line=word;y+=24}else line=test;
+ }
+ if(line)x.fillText(line,18,y);
+ const tex=new THREE.CanvasTexture(c);
+ const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false}));
+ sprite.scale.set(18,4.5,1);
+ return sprite;
+}
+function addPartLabel(text1,text2,pos){
+ const s=makeLabel(text1,text2);s.position.set(...pos);labelsGroup.add(s);return s;
+}
+addPartLabel("TEST BALL","20 mm specimen being inspected",[0,56,0]);
+addPartLabel("SUPPORT ROLLERS","Rotate and support the ball",[0,31,22]);
+addPartLabel("ROLLER BEARING SUPPORT","Holds each roller axle",[22,30,24]);
+addPartLabel("AIR TX / RX HEAD","Sends and receives ultrasound",[0,12,22]);
+addPartLabel("AIR GAP","Non-contact stand-off",[0,27,17]);
+addPartLabel("DRIVE MOTOR","Rotates the test ball",[0,96,18]);
+addPartLabel("Z ADJUSTMENT","Sets sensor vertical position",[43,45,8]);
+addPartLabel("X-Y STAGE","Moves sensor across underside",[0,4,28]);
+addPartLabel("RECEIVER / PROCESSOR","Amplifies and processes signals",[48,28,0]);
+addPartLabel("ROLLER CABLES","Connect support/encoder sensors",[28,18,-22]);
+addPartLabel("FRAME / BASE","Supports the complete rig",[0,4,-45]);
+
+
 const driveGroup=new THREE.Group();driveGroup.name="TOP DRIVE";machine.add(driveGroup);
 const motor=box("DRIVE MOTOR",[22,18,22],[0,88,0],mats.dark,driveGroup);
 const motorCap=cyl("MOTOR CAP",8,5,[0,78,0],mats.metal,new THREE.Vector3(Math.PI/2,0,0),driveGroup);
