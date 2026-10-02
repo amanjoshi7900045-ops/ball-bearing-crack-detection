@@ -172,8 +172,12 @@ function makeRoller(i,a){
  [-1,1].forEach(side=>{
    const p=radial.clone().multiplyScalar(rollerCenterRadius).add(tangent.clone().multiplyScalar(side*12.5));
    p.y=rollerY;
-   cube(supports,[5,9,8],[p.x,p.y,p.z],black);
-   cyl(supports,2.2,3,[p.x,p.y,p.z],bearingMat,'x');
+   const pedestal=new THREE.Group();
+   pedestal.position.set(p.x,p.y,p.z);
+   pedestal.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),tangent);
+   cube(pedestal,[7,9,8],[0,0,0],black);
+   const bearing=cyl(pedestal,2.2,3,[0,0,0],bearingMat,'y');
+   supports.add(pedestal);
  });
  rollers.add(supports);
  rollerAssemblies.push({outer,spin,radial,tangent});
@@ -215,7 +219,7 @@ const motor=G('motor');
 cube(motor,[28,18,24],[0,91,0],black);
 cyl(motor,5,16,[0,80,0],aluminum,'y');
 cyl(motor,7,3,[0,69,0],black,'y');
-const driveTip=cyl(motor,5.5,2.5,[0,65.6,0],brass,'y');
+const driveTip=cyl(motor,5.5,1.6,[0,59.8,0],brass,'y');
 
 // Optical heads are fixed to rigid brackets. They do not move during rotation.
 const gen=G('gen'), det=G('det');
@@ -226,8 +230,15 @@ function laserHead(g,p,m){
 laserHead(gen,[-43,55,28],redMat);
 laserHead(det,[43,61,28],cyanMat);
 
-cube(gen,[7,48,7],[-33,35,28],aluminum);
-cube(det,[7,54,7],[33,39,28],aluminum);
+const genBracket=new THREE.Group(); genBracket.position.set(-33,35,28);
+genBracket.add(new THREE.Mesh(new THREE.BoxGeometry(7,48,7),aluminum));
+genBracket.rotation.z=Math.PI/2;
+gen.add(genBracket);
+
+const detBracket=new THREE.Group(); detBracket.position.set(33,39,28);
+detBracket.add(new THREE.Mesh(new THREE.BoxGeometry(7,54,7),aluminum));
+detBracket.rotation.z=Math.PI/2;
+det.add(detBracket);
 
 const genTarget=new THREE.Vector3(-5.4,50.2,8.35);
 const detTarget=new THREE.Vector3(5.4,50.2,8.35);
