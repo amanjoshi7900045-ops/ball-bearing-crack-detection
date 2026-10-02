@@ -249,7 +249,7 @@ tiltEl.oninput=()=>{tilt=+tiltEl.value;tv.textContent=tilt+"°";updateGeometry()
 
 document.getElementById("pause").onclick=e=>{paused=!paused;e.target.textContent=paused?"Resume rotation":"Pause rotation"};
 document.getElementById("crack").onclick=e=>{showCrack=!showCrack;crack.visible=showCrack;e.target.textContent=showCrack?"Hide crack":"Show crack"};
-document.getElementById("supports").onclick=e=>{relocate=!relocate;arrangeRollers();coverage=0;e.target.textContent=relocate?"Restore supports":"Reposition supports"};
+document.getElementById("supports").onclick=e=>{paused=true;relocate=!relocate;arrangeRollers();coverage=0;e.target.textContent=relocate?"Restore supports":"Reposition supports";document.getElementById("pause").textContent="Resume rotation"};
 document.getElementById("explode").onclick=e=>{
  exploded=!exploded;e.target.textContent=exploded?"Collapse assembly":"Exploded view";
  const k=exploded?1:0;
@@ -271,33 +271,14 @@ document.getElementById("closeInfo").onclick=()=>document.getElementById("info")
 function resize(){const r=stage.getBoundingClientRect();renderer.setSize(r.width,r.height,false);camera.aspect=r.width/r.height;camera.updateProjectionMatrix()}
 new ResizeObserver(resize).observe(stage);resize();updateGeometry();document.getElementById("loading").style.display="none";
 
-let supportIndex=0;
-const supportStates=[0,2*Math.PI/3,4*Math.PI/3];
-function setSupportIndex(index){
- supportIndex=((index%3)+3)%3;
- if(typeof rollers!=='undefined') rollers.rotation.y=supportStates[supportIndex];
- const el=document.getElementById('supportVal');
- if(el) el.textContent='PASS '+(supportIndex+1)+' / '+(supportIndex===0?'FIXED':'INDEXED');
-}
-setSupportIndex(0);
-document.getElementById('reposition')?.addEventListener('click',()=>{
- paused=true;
- if(document.getElementById('pause')) document.getElementById('pause').textContent='Resume';
- setSupportIndex(supportIndex+1);
-});
-document.getElementById('pass')?.addEventListener('change',e=>{
- paused=true;
- if(document.getElementById('pause')) document.getElementById('pause').textContent='Resume';
- setSupportIndex(+e.target.value);
-});
 function animate(now){
  const dt=Math.min(.05,(now-last)/1000);last=now;
  if(!paused){
    angle=(angle+dt*speed*55)%360;
    ballAssembly.rotation.y+=dt*speed*2.6;
    driveGroup.rotation.y+=dt*speed*2.6;
-   rollers.forEach(r=>r.rotation.x+=dt*speed*4);
-   coverage=Math.min(100,coverage+dt*speed*(relocate?5:2.2));
+   rollers.forEach((r,i)=>{r.rotation.x+=dt*speed*4*(i%2?-1:1);});
+   coverage=Math.min(100,coverage+dt*speed*2.2);
  }
  const response=showCrack && Math.sin(angle*Math.PI/180*3)>.84 ? "Defect response" : "Normal";
  document.getElementById("angle").textContent=Math.round(angle)+"°";
