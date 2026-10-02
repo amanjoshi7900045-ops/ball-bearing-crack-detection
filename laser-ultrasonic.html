@@ -124,8 +124,6 @@ cube(base,[9,72,9],[-54,39,0],aluminum);
 cube(base,[9,72,9],[54,39,0],aluminum);
 cube(base,[108,8,9],[0,76,0],aluminum);
 cube(base,[108,5,8],[0,20,0],aluminum);
-cube(base,[10,52,10],[-48,42,0],aluminum);
-cube(base,[10,52,10],[48,42,0],aluminum);
 
 const ballG=G('ball');
 const ball=new THREE.Mesh(new THREE.SphereGeometry(10,72,48),bearingMat);
@@ -157,9 +155,12 @@ const rollerAssemblies=[];
 function makeRoller(i,a){
  const pivot=new THREE.Group();
  pivot.position.set(0,ballCenterY,0);
+
  const assembly=new THREE.Group();
  const radial=new THREE.Vector3(Math.cos(a),0,Math.sin(a));
  const tangent=new THREE.Vector3(-Math.sin(a),0,Math.cos(a)).normalize();
+
+ // Wheel + axle: tangent to the spherical surface.
  assembly.position.set(radial.x*rollerCenterRadius,rollerY-ballCenterY,radial.z*rollerCenterRadius);
  assembly.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),tangent);
 
@@ -171,17 +172,29 @@ function makeRoller(i,a){
  const key=new THREE.Mesh(new THREE.BoxGeometry(1.2,1,3),redMat);
  key.position.set(0,rollerRadius-.15,0); spin.add(key);
  assembly.add(spin);
+ pivot.add(assembly);
 
+ // Two vertical bearing pedestals stay upright and rest on the base.
  const supports=new THREE.Group();
+ const tangentOffset=12.5;
  [-1,1].forEach(side=>{
    const pedestal=new THREE.Group();
-   pedestal.position.set(0,side*12.5,0);
-   cube(pedestal,[7,9,8],[0,0,0],black);
-   cyl(pedestal,2.2,3,[0,0,0],bearingMat,'y');
+   const worldPos=radial.clone().multiplyScalar(rollerCenterRadius)
+     .add(tangent.clone().multiplyScalar(side*tangentOffset));
+   pedestal.position.set(worldPos.x,25.0,worldPos.z);
+   cube(pedestal,[7,37,8],[0,0,0],black);
+   const bearing=new THREE.Mesh(new THREE.CylinderGeometry(2.8,2.8,4,32),bearingMat);
+   bearing.rotation.z=Math.PI/2;
+   bearing.quaternion.premultiply(new THREE.Quaternion().setFromUnitVectors(
+     new THREE.Vector3(0,1,0),tangent
+   ));
+   bearing.position.set(0,18.5,0);
+   bearing.castShadow=true; bearing.receiveShadow=true;
+   pedestal.add(bearing);
    supports.add(pedestal);
  });
- assembly.add(supports);
- pivot.add(assembly);
+ pivot.add(supports);
+
  rollers.add(pivot);
  rollerAssemblies.push({pivot,assembly,spin,radial,tangent});
 }
