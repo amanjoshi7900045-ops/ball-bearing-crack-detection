@@ -311,7 +311,7 @@ const txFace=cyl("TX FACE",3.1,1,[-6,27,0],mats.metal,new THREE.Vector3(Math.PI/
 const rxFace=cyl("RX FACE",3.1,1,[6,27,0],mats.metal,new THREE.Vector3(Math.PI/2,0,0),headGroup);
 
 const receiver=box("RECEIVER PROCESSOR",[34,18,28],[36,22,0],mats.dark,machine);
-const receiverPanel=box("PROCESSOR PANEL",[24,10,2],[36,22,14],mats.green,receiver);
+// Removed unnecessary floating processor panel; receiver housing remains.
 
 const beamGroup=new THREE.Group();beamGroup.name="ULTRASONIC AIR PATH";scene.add(beamGroup);
 function makeBeam(x){
