@@ -133,9 +133,38 @@ const rollerAngles=[Math.PI/2,Math.PI/2+2*Math.PI/3,Math.PI/2+4*Math.PI/3];
 const rollers=[];
 function makeRoller(i){
  const g=new THREE.Group();g.name="SUPPORT ROLLER "+(i+1);
- const w=new THREE.Mesh(new THREE.CylinderGeometry(4.5,4.5,14,36),mats.roller);w.rotation.z=Math.PI/2;w.castShadow=true;g.add(w);
- const shaft=new THREE.Mesh(new THREE.CylinderGeometry(1.3,1.3,18,24),mats.metal);shaft.rotation.z=Math.PI/2;g.add(shaft);
- rollersGroup.add(g);rollers.push(g);return g;
+
+ // Fixed support bracket. The inner axle group is the only part that spins.
+ const axleGroup=new THREE.Group();
+ axleGroup.name="ROLLER "+(i+1)+" AXLE";
+ axleGroup.rotation.z=Math.PI/2;
+
+ const w=new THREE.Mesh(new THREE.CylinderGeometry(4.5,4.5,14,36),mats.roller);
+ w.castShadow=true; axleGroup.add(w);
+
+ // Visible keyed hub/stripe so rotation is unmistakable in the simulation.
+ const hub=new THREE.Mesh(
+   new THREE.CylinderGeometry(2.0,2.0,14.8,24),
+   mats.metal
+ );
+ hub.position.y=0; axleGroup.add(hub);
+
+ const stripe=new THREE.Mesh(
+   new THREE.TorusGeometry(4.53,.22,10,36),
+   mats.red
+ );
+ stripe.rotation.x=Math.PI/2;
+ stripe.position.y=3.8;
+ axleGroup.add(stripe);
+
+ const shaft=new THREE.Mesh(new THREE.CylinderGeometry(1.3,1.3,20,24),mats.metal);
+ shaft.position.set(0,0,0);
+ axleGroup.add(shaft);
+
+ g.add(axleGroup);
+ rollersGroup.add(g);
+ rollers.push(g);
+ return g;
 }
 for(let i=0;i<3;i++)makeRoller(i);
 
@@ -277,7 +306,7 @@ function animate(now){
    angle=(angle+dt*speed*55)%360;
    ballAssembly.rotation.y+=dt*speed*2.6;
    driveGroup.rotation.y+=dt*speed*2.6;
-   rollers.forEach((r,i)=>{ r.children[0].rotation.x += dt*speed*4*(i%2?-1:1); r.children[1].rotation.x += dt*speed*4*(i%2?-1:1); });
+   rollers.forEach((r,i)=>{ const axle=r.children[0]; axle.rotation.y += dt*speed*4*(i%2?-1:1); });
    coverage=Math.min(100,coverage+dt*speed*2.2);
  }
  const response=showCrack && Math.sin(angle*Math.PI/180*3)>.84 ? "Defect response" : "Normal";
