@@ -143,7 +143,7 @@ const driveGroup=new THREE.Group();driveGroup.name="TOP DRIVE";machine.add(drive
 const motor=box("DRIVE MOTOR",[22,18,22],[0,88,0],mats.dark,driveGroup);
 const motorCap=cyl("MOTOR CAP",8,5,[0,78,0],mats.metal,new THREE.Vector3(Math.PI/2,0,0),driveGroup);
 const spindle=cyl("DRIVE SPINDLE",3,16,[0,70,0],mats.metal,new THREE.Vector3(0,0,0),driveGroup);
-const drivePad=cyl("DRIVE PAD",7,4,[0,61.5,0],mats.roller,new THREE.Vector3(0,0,0),driveGroup);
+const drivePad=cyl("DRIVE PAD",7,4,[0,52,0],mats.roller,new THREE.Vector3(0,0,0),driveGroup);
 
 const zGroup=new THREE.Group();zGroup.name="Z ADJUSTMENT";machine.add(zGroup);
 const zRail=box("Z RAIL",[6,54,8],[30,39,0],mats.frame,zGroup);
@@ -227,7 +227,7 @@ let gap=10,speed=1,tilt=0,paused=false,showCrack=true,relocate=false,exploded=fa
 function arrangeRollers(){
  const radius=relocate?25:18;
  rollers.forEach((g,i)=>{
-   const a=rollerAngles[i];g.position.set(Math.cos(a)*radius,relocate?3:0,Math.sin(a)*radius);
+   const a=rollerAngles[i];g.position.set(Math.cos(a)*radius,relocate?3:25.5,Math.sin(a)*radius);
    g.rotation.y=-a;
  });
 }
