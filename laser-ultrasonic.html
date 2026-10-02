@@ -185,7 +185,7 @@ function makeRoller(i,a){
  rollers.add(pivot);
  rollerAssemblies.push({pivot,assembly,spin,radial,tangent});
 }
-rollerAngles.forEach((a,i)=>makeRoller(i,a));i,a));
+rollerAngles.forEach((a,i)=>makeRoller(i,a));
 
 const rollerCableGroup=new THREE.Group(); rollerCableGroup.name="ROLLER SUPPORT CABLES"; scene.add(rollerCableGroup);
 function rollerCable(points){
