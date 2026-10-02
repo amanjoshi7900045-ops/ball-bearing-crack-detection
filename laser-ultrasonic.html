@@ -28,6 +28,7 @@ button{margin:8px 5px 0 0;padding:7px 10px;border-radius:8px;border:1px solid #3
 <div class="row"><span>Scan angle</span><span class="v" id="angVal">0°</span></div>
 <div class="row"><span>Signal amplitude</span><span class="v" id="sigVal">82 %</span></div>
 <div class="row"><span>Crack response</span><span class="v" id="crackVal">DETECTED</span></div>
+<div class="row"><span>Support rollers</span><span class="v" id="rollerVal">FIXED / ROTATING</span></div>
 <label>Ball rotation</label><input id="rot" type="range" min="0" max="3" step=".01" value="0">
 <label>Detection laser tilt</label><input id="tilt" type="range" min="-30" max="30" step="1" value="0">
 <button id="pause">Pause</button><button id="crack">Hide crack</button><button id="explode">Exploded view</button><button id="reset">Reset view</button>
@@ -43,7 +44,7 @@ button{margin:8px 5px 0 0;padding:7px 10px;border-radius:8px;border:1px solid #3
 <div class="part" data-id="motor">● DRIVE MOTOR</div>
 </div>
 <div id="flow"><b>SIGNAL FLOW</b><br>Generation laser → thermoelastic ultrasonic wave → cracked metal surface → detection laser → interferometer → signal conditioning → crack detection / position map</div>
-<div id="note">Conceptual simulation only. Laser wavelength, pulse energy, interferometer model and detection performance are illustrative and must be experimentally validated. Use appropriate laser safety controls for any physical prototype.</div>
+<div id="note">Rollers remain fixed during the scan and rotate only to represent rolling support. They are not a scanning actuator. Conceptual simulation only. Laser wavelength, pulse energy, interferometer model and detection performance are illustrative and must be experimentally validated. Use appropriate laser safety controls for any physical prototype.</div>
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/+esm';
 import {OrbitControls} from 'https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/controls/OrbitControls.js/+esm';
@@ -79,6 +80,8 @@ const crack=new THREE.Mesh(new THREE.TubeGeometry(crackCurve,32,.38,8,false),new
 
 const rollerPositions=[[-15,35,9],[15,35,9],[0,35,-13]];
 const rollers=makeGroup('rollers'); rollerPositions.forEach(p=>{const r=new THREE.Mesh(new THREE.CylinderGeometry(4,4,16,32),steel);r.rotation.z=Math.PI/2;r.position.set(...p);r.castShadow=true;rollers.add(r)});scene.add(rollers);
+// Support rollers stay fixed in position during a scan. Their only motion is spinning at the contact surface.
+const rollerSpinDirection=[1,-1,1];
 
 function laserUnit(id,x,y,z,color){const g=makeGroup(id);const body=new THREE.Mesh(new THREE.CylinderGeometry(4,4,14,32),dark);body.rotation.z=Math.PI/2;body.position.set(x,y,z);g.add(body);const lens=new THREE.Mesh(new THREE.SphereGeometry(2.7,24,16),new THREE.MeshBasicMaterial({color}));lens.position.set(x+(x>0?-7:7),y,z);g.add(lens);scene.add(g);return g}
 laserUnit('gen',-48,62,5,0xff2447);
@@ -108,13 +111,21 @@ tiltEl.oninput=()=>{tilt=+tiltEl.value;document.querySelector('#angVal').textCon
 document.querySelector('#pause').onclick=()=>{paused=!paused;document.querySelector('#pause').textContent=paused?'Resume':'Pause'};
 document.querySelector('#crack').onclick=()=>{showCrack=!showCrack;crack.visible=showCrack;document.querySelector('#crack').textContent=showCrack?'Hide crack':'Show crack';document.querySelector('#crackVal').textContent=showCrack?'DETECTED':'NO CRACK SHOWN'};
 document.querySelector('#explode').onclick=()=>{exploded=!exploded; groups.gen.position.x=exploded?-22:0;groups.det.position.x=exploded?22:0;groups.inter.position.x=exploded?18:0;groups.proc.position.x=exploded?18:0;groups.rollers.position.y=exploded?8:0;waveGroup.position.y=exploded?10:0};
-document.querySelector('#reset').onclick=()=>{camera.position.set(105,78,105);controls.target.set(0,25,0);controls.update();rotEl.value=0;rot=0;tiltEl.value=0;tilt=0;document.querySelector('#rotVal').textContent='0.0×';document.querySelector('#angVal').textContent='0°'};
+document.querySelector('#reset').onclick=()=>{camera.position.set(105,78,105);controls.target.set(0,25,0);controls.update();rotEl.value=0;rot=0;tiltEl.value=0;tilt=0;rollers.children.forEach((r)=>{r.rotation.x=0});document.querySelector('#rotVal').textContent='0.0×';document.querySelector('#angVal').textContent='0°'};
 
 document.querySelectorAll('.part').forEach(e=>e.onclick=()=>{const g=groups[e.dataset.id];if(!g)return;const p=new THREE.Vector3();g.getWorldPosition(p);controls.target.copy(p);camera.position.copy(p.clone().add(new THREE.Vector3(45,30,45)));});
 const ray=new THREE.Raycaster(),mouse=new THREE.Vector2();
 renderer.domElement.addEventListener('click',ev=>{mouse.x=ev.clientX/innerWidth*2-1;mouse.y=-(ev.clientY/innerHeight)*2+1;ray.setFromCamera(mouse,camera);const hit=ray.intersectObjects(scene.children,true)[0];if(hit){hit.object.scale.multiplyScalar(1.06)}});
 
-function animate(t){requestAnimationFrame(animate);if(!paused){ballG.rotation.y=rot*Math.PI*2 + t*.00025;waveGroup.rotation.y=t*.00035;const amp=showCrack?82+8*Math.sin(t*.004):8;document.querySelector('#sigVal').textContent=Math.round(amp)+' %'}controls.update();renderer.render(scene,camera)}
+function animate(t){requestAnimationFrame(animate);if(!paused){
+  const ballAngular=rot*Math.PI*2 + t*.00025;
+  ballG.rotation.y=ballAngular;
+  // The rollers do not translate or orbit. They spin in place to represent rolling contact with the rotating ball.
+  rollers.children.forEach((r,i)=>{r.rotation.x=ballAngular*0.9*rollerSpinDirection[i];});
+  waveGroup.rotation.y=t*.00035;
+  const amp=showCrack?82+8*Math.sin(t*.004):8;
+  document.querySelector('#sigVal').textContent=Math.round(amp)+' %'
+}controls.update();renderer.render(scene,camera)}
 animate(0);
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 </script>
