@@ -148,20 +148,68 @@ const crack=new THREE.Mesh(new THREE.TubeGeometry(crackCurve,40,.30,8,false),
 ballG.add(crack);
 
 const rollers=G('rollers');
-const rollerRadius=4;
-const rollerAxisRadius=Math.sqrt((10+rollerRadius)**2-10**2); // 9.798 mm
-const rollerY=39;
+const rollerRadius=4.5, ballRadius=10, ballCenterY=49;
+const rollerCenterRadius=ballRadius+rollerRadius-0.35;
+const rollerY=ballCenterY-3.15;
 const rollerAngles=[Math.PI/6,Math.PI/6+2*Math.PI/3,Math.PI/6+4*Math.PI/3];
-const rollerMeshes=[];
-rollerAngles.forEach((a,i)=>{
- const x=rollerAxisRadius*Math.cos(a), z=rollerAxisRadius*Math.sin(a);
- const r=cyl(rollers,rollerRadius,22,[x,rollerY,z],aluminum,'x');
- // Cylinder axis is tangent to the support ring, not radial.
- const tangent=new THREE.Vector3(-Math.sin(a),0,Math.cos(a));
- r.quaternion.setFromUnitVectors(new THREE.Vector3(1,0,0),tangent);
- rollerMeshes.push(r);
+const rollerAssemblies=[];
+
+function makeRoller(i,a){
+ const outer=new THREE.Group(); outer.name="SUPPORT ROLLER "+(i+1);
+ const spin=new THREE.Group(); spin.name="ROLLER "+(i+1)+" AXLE";
+ const wheel=new THREE.Mesh(new THREE.CylinderGeometry(rollerRadius,rollerRadius,18,48),aluminum);
+ wheel.castShadow=true; wheel.receiveShadow=true; spin.add(wheel);
+ spin.add(new THREE.Mesh(new THREE.CylinderGeometry(1.25,1.25,25,32),bearingMat));
+ const key=new THREE.Mesh(new THREE.BoxGeometry(1.2,1,3),redMat);
+ key.position.set(0,rollerRadius-.15,0); spin.add(key);
+ const radial=new THREE.Vector3(Math.cos(a),0,Math.sin(a));
+ const tangent=new THREE.Vector3(-Math.sin(a),0,Math.cos(a)).normalize();
+ outer.position.set(radial.x*rollerCenterRadius,rollerY,radial.z*rollerCenterRadius);
+ outer.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),tangent);
+ outer.add(spin); rollers.add(outer);
+
+ const supports=new THREE.Group(); supports.name="ROLLER "+(i+1)+" BEARING SUPPORTS";
+ [-1,1].forEach(side=>{
+   const p=radial.clone().multiplyScalar(rollerCenterRadius).add(tangent.clone().multiplyScalar(side*12.5));
+   p.y=rollerY;
+   cube(supports,[5,9,8],[p.x,p.y,p.z],black);
+   cyl(supports,2.2,3,[p.x,p.y,p.z],bearingMat,'x');
+ });
+ rollers.add(supports);
+ rollerAssemblies.push({outer,spin,radial,tangent});
+}
+rollerAngles.forEach((a,i)=>makeRoller(i,a));
+
+const rollerCableGroup=new THREE.Group(); rollerCableGroup.name="ROLLER SUPPORT CABLES"; scene.add(rollerCableGroup);
+function rollerCable(points){
+ const curve=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p)));
+ rollerCableGroup.add(new THREE.Mesh(new THREE.TubeGeometry(curve,28,.35,8,false),
+   new THREE.MeshStandardMaterial({color:0x252d31,roughness:.55,metalness:.15})));
+}
+rollerAssemblies.forEach((r,i)=>{
+ const p=r.radial.clone().multiplyScalar(rollerCenterRadius).add(r.tangent.clone().multiplyScalar(12.5)); p.y=rollerY;
+ rollerCable([[p.x,p.y,p.z],[p.x+r.tangent.x*5,p.y+3,p.z+r.tangent.z*5],[30,26+i*3,12-i*8],[62,30,8]]);
 });
- 
+
+const labelGroup=new THREE.Group(); scene.add(labelGroup);
+function label(text1,text2,pos){
+ const cv=document.createElement('canvas');cv.width=640;cv.height=150;
+ const x=cv.getContext('2d'); x.fillStyle='rgba(248,250,251,.97)';x.fillRect(0,0,640,150);
+ x.strokeStyle='#65747f';x.lineWidth=3;x.strokeRect(2,2,636,146);
+ x.font='bold 28px Arial';x.fillStyle='#18212a';x.fillText(text1,18,42);
+ x.font='20px Arial';x.fillStyle='#4c5b65';x.fillText(text2,18,78);
+ const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cv),transparent:true,depthTest:false}));
+ s.scale.set(22,5.2,1);s.position.set(...pos);labelGroup.add(s);
+}
+label('TEST BALL','20 mm spherical specimen',[0,61,0]);
+label('SUPPORT ROLLER','Supports + rotates ball',[0,31,23]);
+label('BEARING SUPPORT','Carries roller axle',[22,31,20]);
+label('GENERATION LASER','Creates ultrasonic excitation',[-43,64,28]);
+label('DETECTION LASER','Measures surface vibration',[43,70,28]);
+label('INTERFEROMETER','Converts optical vibration signal',[72,58,8]);
+label('SIGNAL PROCESSOR','Filters + detects defect',[72,37,8]);
+label('DRIVE MOTOR','Rotates specimen',[0,101,18]);
+label('FRAME / BASE','Supports inspection mechanism',[0,9,-42]);
 // top drive: vertical spindle presses on the ball without touching the optical scan path
 const motor=G('motor');
 cube(motor,[28,18,24],[0,91,0],black);
@@ -218,7 +266,7 @@ const supportStates=[0,2*Math.PI/3,4*Math.PI/3];
 let supportIndex=0;
 function setSupportIndex(index){
  supportIndex=index%3;
- rollers.rotation.y=supportStates[supportIndex];
+ rollerAssemblies.forEach(r=>r.outer.rotation.y=supportStates[supportIndex]);
  document.querySelector('#supportVal').textContent='PASS '+(supportIndex+1)+' / '+(supportIndex===0?'FIXED':'INDEXED');
 }
 setSupportIndex(0);
@@ -255,7 +303,7 @@ document.querySelector('#crack').onclick=()=>{
 document.querySelector('#reset').onclick=()=>{
  camera.position.set(112,78,112); controls.target.set(0,38,0); controls.update();
  rot=0; tilt=0; supportIndex=0; rotEl.value=0; tiltEl.value=0;
- rollers.rotation.y=0; det.rotation.y=0; crack.visible=true; showCrack=true;
+ rollerAssemblies.forEach(r=>r.outer.rotation.y=0); det.rotation.y=0; crack.visible=true; showCrack=true;
  paused=false; document.querySelector('#pause').textContent='Pause scan';
  document.querySelector('#scanState').textContent='RUNNING';
  document.querySelector('#supportVal').textContent='PASS 1 / FIXED';
@@ -272,8 +320,10 @@ function animate(t){
  if(!paused){
    const ballAngle=rot*Math.PI*2+t*.00018;
    ballG.rotation.y=ballAngle;
-   // Rollers spin in place. Their centres do not translate during the pass.
-   rollerMeshes.forEach((r,i)=>{r.rotation.x=ballAngle*(i%2?-1:1);});
+   // Rollers stay fixed in position and spin about their own tangent axles.
+   rollerAssemblies.forEach((r,i)=>{
+     r.spin.rotation.y += .00072*(i===1?-1:1);
+   });
    waveGroup.rotation.y=t*.0003;
    scanSpot.material.opacity=.45+.35*Math.sin(t*.006)**2;
    const response=showCrack?(72+18*Math.sin(t*.003)):(8+2*Math.sin(t*.003));
