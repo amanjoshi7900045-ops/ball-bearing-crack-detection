@@ -5,23 +5,23 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Laser Ultrasonic Ball-Bearing Inspection — Engineering Prototype</title>
 <style>
-html,body{margin:0;height:100%;overflow:hidden;background:#e7ebee;color:#18212a;font-family:Arial,Helvetica,sans-serif}
+html,body{margin:0;height:100%;overflow:hidden;background:#05070a;color:#e8eef2;font-family:Arial,Helvetica,sans-serif}
 #app{position:fixed;inset:0}
-#hud,#parts,#status{position:fixed;background:rgba(248,250,251,.96);border:1px solid #aeb8c1;box-shadow:0 5px 18px rgba(30,40,50,.15);border-radius:6px}
+#hud,#parts,#status{position:fixed;background:rgba(12,16,20,.96);border:1px solid #394650;box-shadow:0 5px 18px rgba(30,40,50,.15);border-radius:6px}
 #hud{left:16px;top:16px;width:310px;padding:14px;z-index:5}
 #parts{right:16px;top:16px;width:235px;padding:12px;z-index:5}
-#status{left:16px;bottom:16px;padding:10px 13px;z-index:5;font:12px monospace;color:#394754}
-h1{font-size:15px;margin:0 0 3px;font-weight:700;color:#111820}
-.sub{font-size:10px;color:#657481;margin-bottom:12px}
+#status{left:16px;bottom:16px;padding:10px 13px;z-index:5;font:12px monospace;color:#aeb9c1}
+h1{font-size:15px;margin:0 0 3px;font-weight:700;color:#f1f5f7}
+.sub{font-size:10px;color:#9eabb5;margin-bottom:12px}
 .row{display:flex;justify-content:space-between;margin:7px 0;font-size:11px}
-.v{font-family:monospace;color:#1e536c}
-label{display:block;margin-top:9px;font-size:10px;color:#5b6872}
+.v{font-family:monospace;color:#69d3ee}
+label{display:block;margin-top:9px;font-size:10px;color:#aeb9c1}
 input[type=range]{width:100%}
-button,select{margin:7px 4px 0 0;padding:6px 8px;border:1px solid #9ca8b1;border-radius:4px;background:#fff;color:#26313a;font-size:11px}
-button:hover{background:#edf2f5}
-.part{padding:6px 7px;margin:3px 0;border:1px solid #d0d7dc;background:#fff;border-radius:3px;font-size:10px;cursor:pointer}
-.part:hover{background:#eef3f6}
-.note{font-size:9px;line-height:1.4;color:#66747f;margin-top:10px}
+button,select{margin:7px 4px 0 0;padding:6px 8px;border:1px solid #9ca8b1;border-radius:4px;background:#11171c;color:#e7edf0;font-size:11px}
+button:hover{background:#1b252c}
+.part{padding:6px 7px;margin:3px 0;border:1px solid #35424b;background:#11171c;border-radius:3px;font-size:10px;cursor:pointer}
+.part:hover{background:#1b252c}
+.note{font-size:9px;line-height:1.4;color:#93a1aa;margin-top:10px}
 </style>
 </head>
 <body>
@@ -82,8 +82,8 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/+esm';
 import {OrbitControls} from 'https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/controls/OrbitControls.js/+esm';
 
 const scene=new THREE.Scene();
-scene.background=new THREE.Color(0xe7ebee);
-scene.fog=new THREE.Fog(0xe7ebee,180,360);
+scene.background=new THREE.Color(0x05070a);
+scene.fog=new THREE.Fog(0x05070a,180,360);
 
 const camera=new THREE.PerspectiveCamera(42,innerWidth/innerHeight,.1,500);
 camera.position.set(112,78,112);
@@ -100,7 +100,7 @@ const controls=new OrbitControls(camera,renderer.domElement);
 controls.enableDamping=true;
 controls.target.set(0,38,0);
 
-scene.add(new THREE.HemisphereLight(0xffffff,0x78838b,2.0));
+scene.add(new THREE.HemisphereLight(0xffffff,0x151a1f,2.8));
 const key=new THREE.DirectionalLight(0xffffff,3.0);
 key.position.set(70,120,70); key.castShadow=true; scene.add(key);
 
