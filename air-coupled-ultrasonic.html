@@ -32,7 +32,7 @@ button{padding:8px 9px;margin:2px;background:#15342b;color:#edfff9;border:1px so
 <div id="info"><span class="x" id="closeInfo">×</span><b id="infoTitle"></b><p id="infoText"></p></div>
 </div>
 <aside class="panel">
-<h1>Ball Bearing Crack Detection</h1><div class="sub">Air-coupled ultrasonic 3D working model</div>
+<h1>AIR-COUPLED ULTRASONIC INSPECTION RIG</h1><div class="sub">Non-contact ultrasonic inspection of a 20 mm metallic bearing ball</div>
 <span class="badge">MATCHED TO THE GENERATED CONCEPT DIAGRAM</span>
 <p>The geometry represents the same physical arrangement: spherical test ball, three repositionable support rollers, top drive, vertical Z adjustment, bottom X-Y ultrasonic carriage, air-coupled TX/RX transducers, receiver/processor, frame and base.</p>
 
@@ -40,7 +40,7 @@ button{padding:8px 9px;margin:2px;background:#15342b;color:#edfff9;border:1px so
 <div class="control"><label>Air stand-off <b id="gv">10.0 mm</b></label><input id="gap" type="range" min="5" max="30" step=".5" value="10"></div>
 <div class="control"><label>Ball rotation <b id="sv">1.0×</b></label><input id="speed" type="range" min="0" max="3" step=".1" value="1"></div>
 <div class="control"><label>Sensor tilt <b id="tv">0°</b></label><input id="tilt" type="range" min="-30" max="30" step="1" value="0"></div>
-<button id="pause">Pause rotation</button><button id="reset">Reset view</button><button id="crack">Hide crack</button><button id="supports">Reposition supports</button><button id="explode">Exploded view</button>
+<button id="pause">Pause rotation</button><button id="reset">Reset view</button><button id="reposition">Index supports</button><select id="pass"><option value="0">Pass 1 — normal support</option><option value="1">Pass 2 — indexed</option><option value="2">Pass 3 — indexed</option></select><button id="crack">Hide crack</button><button id="supports">Reposition supports</button><button id="explode">Exploded view</button>
 
 <h2>Parts — click to identify</h2>
 <div class="parts">
@@ -271,6 +271,25 @@ document.getElementById("closeInfo").onclick=()=>document.getElementById("info")
 function resize(){const r=stage.getBoundingClientRect();renderer.setSize(r.width,r.height,false);camera.aspect=r.width/r.height;camera.updateProjectionMatrix()}
 new ResizeObserver(resize).observe(stage);resize();updateGeometry();document.getElementById("loading").style.display="none";
 
+let supportIndex=0;
+const supportStates=[0,2*Math.PI/3,4*Math.PI/3];
+function setSupportIndex(index){
+ supportIndex=((index%3)+3)%3;
+ if(typeof rollers!=='undefined') rollers.rotation.y=supportStates[supportIndex];
+ const el=document.getElementById('supportVal');
+ if(el) el.textContent='PASS '+(supportIndex+1)+' / '+(supportIndex===0?'FIXED':'INDEXED');
+}
+setSupportIndex(0);
+document.getElementById('reposition')?.addEventListener('click',()=>{
+ paused=true;
+ if(document.getElementById('pause')) document.getElementById('pause').textContent='Resume';
+ setSupportIndex(supportIndex+1);
+});
+document.getElementById('pass')?.addEventListener('change',e=>{
+ paused=true;
+ if(document.getElementById('pause')) document.getElementById('pause').textContent='Resume';
+ setSupportIndex(+e.target.value);
+});
 function animate(now){
  const dt=Math.min(.05,(now-last)/1000);last=now;
  if(!paused){
