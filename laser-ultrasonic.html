@@ -71,12 +71,13 @@ box('frame',-50,40,0,8,75,8,steel); box('frame2',50,40,0,8,75,8,steel);
 box('frameTop',0,76,0,108,8,8,steel);
 box('motor',0,92,0,30,16,26,dark);
 const spindle=new THREE.Mesh(new THREE.CylinderGeometry(6,6,14,32),steel); spindle.rotation.x=Math.PI/2; spindle.position.set(0,81,0); groups.motor.add(spindle);
+const drivePad=new THREE.Mesh(new THREE.CylinderGeometry(7,7,3,32),dark); drivePad.rotation.x=Math.PI/2; drivePad.position.set(0,70,0); groups.motor.add(drivePad);
 
 const ballG=makeGroup('ball'); const ball=new THREE.Mesh(new THREE.SphereGeometry(10,64,64),mat(0x9aa8b5,.95)); ball.position.set(0,49,0); ball.castShadow=true; ballG.add(ball);
 const crackCurve=new THREE.CatmullRomCurve3([new THREE.Vector3(-5,51,8.7),new THREE.Vector3(-1,48,9.7),new THREE.Vector3(3,45,9.1),new THREE.Vector3(6,43,7.7)]);
 const crack=new THREE.Mesh(new THREE.TubeGeometry(crackCurve,32,.38,8,false),new THREE.MeshBasicMaterial({color:0xff263f})); crack.position.set(0,0,0); ballG.add(crack); scene.add(ballG);
 
-const rollerPositions=[[-15,36,9],[15,36,9],[0,31,-13]];
+const rollerPositions=[[-15,39,9],[15,39,9],[0,34,-13]];
 const rollers=makeGroup('rollers'); rollerPositions.forEach(p=>{const r=new THREE.Mesh(new THREE.CylinderGeometry(4,4,16,32),steel);r.rotation.z=Math.PI/2;r.position.set(...p);r.castShadow=true;rollers.add(r)});scene.add(rollers);
 
 function laserUnit(id,x,y,z,color){const g=makeGroup(id);const body=new THREE.Mesh(new THREE.CylinderGeometry(4,4,14,32),dark);body.rotation.z=Math.PI/2;body.position.set(x,y,z);g.add(body);const lens=new THREE.Mesh(new THREE.SphereGeometry(2.7,24,16),new THREE.MeshBasicMaterial({color}));lens.position.set(x+(x>0?-7:7),y,z);g.add(lens);scene.add(g);return g}
@@ -98,7 +99,7 @@ const cable2=beam([41,68,5],[72,45,-12],new THREE.LineBasicMaterial({color:0x777
 
 const labels=[];
 function label(text,pos){const c=document.createElement('canvas');c.width=512;c.height=64;const x=c.getContext('2d');x.fillStyle='#dff7ff';x.font='bold 28px Arial';x.fillText(text,8,42);const t=new THREE.CanvasTexture(c);const s=new THREE.Sprite(new THREE.SpriteMaterial({map:t,transparent:true,depthTest:false}));s.scale.set(24,3,1);s.position.set(...pos);scene.add(s);labels.push(s);return s}
-label('20 mm METAL BALL',[0,64,0]); label('GENERATION LASER',[-48,72,5]); label('DETECTION LASER',[48,78,5]); label('INTERFEROMETER',[72,55,-12]); label('SIGNAL PROCESSING',[72,37,-12]); label('3 SUPPORT ROLLERS',[0,27,16]); label('DRIVE MOTOR',[0,103,0]);
+label('20 mm METAL BALL',[0,64,0]); label('GENERATION LASER',[-48,72,5]); label('DETECTION LASER',[48,78,5]); label('INTERFEROMETER',[72,55,-12]); label('SIGNAL PROCESSING',[72,37,-12]); label('3 SUPPORT ROLLERS',[0,31,16]); label('DRIVE MOTOR',[0,103,0]);
 
 let paused=false,showCrack=true,exploded=false,rot=0,tilt=0;
 const rotEl=document.querySelector('#rot'),tiltEl=document.querySelector('#tilt');
