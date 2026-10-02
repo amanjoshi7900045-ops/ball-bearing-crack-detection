@@ -182,13 +182,13 @@ function makeRoller(i,a){
    const worldPos=radial.clone().multiplyScalar(rollerCenterRadius)
      .add(tangent.clone().multiplyScalar(side*tangentOffset));
    pedestal.position.set(worldPos.x,25.0,worldPos.z);
-   cube(pedestal,[7,37,8],[0,0,0],black);
+   cube(pedestal,[7,38.7,8],[0,0,0],black);
    const bearing=new THREE.Mesh(new THREE.CylinderGeometry(2.8,2.8,4,32),bearingMat);
    bearing.rotation.z=Math.PI/2;
    bearing.quaternion.premultiply(new THREE.Quaternion().setFromUnitVectors(
      new THREE.Vector3(0,1,0),tangent
    ));
-   bearing.position.set(0,18.5,0);
+   bearing.position.set(0,20.85,0);
    bearing.castShadow=true; bearing.receiveShadow=true;
    pedestal.add(bearing);
    supports.add(pedestal);
