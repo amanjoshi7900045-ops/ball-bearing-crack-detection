@@ -132,36 +132,52 @@ const rollersGroup=new THREE.Group();rollersGroup.name="THREE REPOSITIONABLE SUP
 const rollerAngles=[Math.PI/2,Math.PI/2+2*Math.PI/3,Math.PI/2+4*Math.PI/3];
 const rollers=[];
 function makeRoller(i){
- const g=new THREE.Group();g.name="SUPPORT ROLLER "+(i+1);
+ const g=new THREE.Group();
+ g.name="SUPPORT ROLLER "+(i+1);
 
- // Fixed support bracket. The inner axle group is the only part that spins.
- const axleGroup=new THREE.Group();
- axleGroup.name="ROLLER "+(i+1)+" AXLE";
- axleGroup.rotation.z=Math.PI/2;
+ // Local Y is the physical roller axle.  The outer group is oriented
+ // tangentially around the ball; the inner spinGroup rotates ONLY about
+ // that local axle, so the roller cannot orbit or spin about the wrong axis.
+ const spinGroup=new THREE.Group();
+ spinGroup.name="ROLLER "+(i+1)+" SPIN AXLE";
 
- const w=new THREE.Mesh(new THREE.CylinderGeometry(4.5,4.5,14,36),mats.roller);
- w.castShadow=true; axleGroup.add(w);
+ const w=new THREE.Mesh(
+   new THREE.CylinderGeometry(4.5,4.5,14,48),
+   mats.roller
+ );
+ w.castShadow=true;
+ w.receiveShadow=true;
+ spinGroup.add(w);
 
- // Visible keyed hub/stripe so rotation is unmistakable in the simulation.
- const hub=new THREE.Mesh(
-   new THREE.CylinderGeometry(2.0,2.0,14.8,24),
+ const shaft=new THREE.Mesh(
+   new THREE.CylinderGeometry(1.3,1.3,20,32),
    mats.metal
  );
- hub.position.y=0; axleGroup.add(hub);
+ spinGroup.add(shaft);
 
- const stripe=new THREE.Mesh(
-   new THREE.TorusGeometry(4.53,.22,10,36),
+ // A keyed marker on the roller circumference makes actual rotation visible.
+ const key=new THREE.Mesh(
+   new THREE.BoxGeometry(1.0,1.0,2.8),
    mats.red
  );
- stripe.rotation.x=Math.PI/2;
- stripe.position.y=3.8;
- axleGroup.add(stripe);
+ key.position.set(0,3.95,0);
+ key.castShadow=true;
+ spinGroup.add(key);
 
- const shaft=new THREE.Mesh(new THREE.CylinderGeometry(1.3,1.3,20,24),mats.metal);
- shaft.position.set(0,0,0);
- axleGroup.add(shaft);
+ // End hub.
+ const hub1=new THREE.Mesh(
+   new THREE.CylinderGeometry(2.0,2.0,1.0,24),
+   mats.metal
+ );
+ hub1.position.y=7.2;
+ spinGroup.add(hub1);
 
- g.add(axleGroup);
+ const hub2=hub1.clone();
+ hub2.position.y=-7.2;
+ spinGroup.add(hub2);
+
+ g.add(spinGroup);
+ g.userData.spinGroup=spinGroup;
  rollersGroup.add(g);
  rollers.push(g);
  return g;
@@ -255,9 +271,16 @@ let gap=10,speed=1,tilt=0,paused=false,showCrack=true,relocate=false,exploded=fa
 
 function arrangeRollers(){
  const radius=relocate?25:18;
+ const axleLocal=new THREE.Vector3(0,1,0);
  rollers.forEach((g,i)=>{
-   const a=rollerAngles[i];g.position.set(Math.cos(a)*radius,relocate?3:25.5,Math.sin(a)*radius);
-   g.rotation.y=-a;
+   const a=rollerAngles[i];
+   const radial=new THREE.Vector3(Math.cos(a),0,Math.sin(a));
+   const tangent=new THREE.Vector3(-Math.sin(a),0,Math.cos(a)).normalize();
+
+   g.position.set(radial.x*radius,relocate?3:25.5,radial.z*radius);
+
+   // Point the roller's local Y axle along the tangent to the support ring.
+   g.quaternion.setFromUnitVectors(axleLocal,tangent);
  });
 }
 arrangeRollers();
@@ -306,7 +329,10 @@ function animate(now){
    angle=(angle+dt*speed*55)%360;
    ballAssembly.rotation.y+=dt*speed*2.6;
    driveGroup.rotation.y+=dt*speed*2.6;
-   rollers.forEach((r,i)=>{ const axle=r.children[0]; axle.rotation.y += dt*speed*4*(i%2?-1:1); });
+   rollers.forEach((r,i)=>{
+     const spin=r.userData.spinGroup;
+     if(spin) spin.rotateY(dt*speed*4*(i%2?-1:1));
+   });
    coverage=Math.min(100,coverage+dt*speed*2.2);
  }
  const response=showCrack && Math.sin(angle*Math.PI/180*3)>.84 ? "Defect response" : "Normal";
