@@ -155,34 +155,37 @@ const rollerAngles=[Math.PI/6,Math.PI/6+2*Math.PI/3,Math.PI/6+4*Math.PI/3];
 const rollerAssemblies=[];
 
 function makeRoller(i,a){
- const outer=new THREE.Group(); outer.name="SUPPORT ROLLER "+(i+1);
- const spin=new THREE.Group(); spin.name="ROLLER "+(i+1)+" AXLE";
- const wheel=new THREE.Mesh(new THREE.CylinderGeometry(rollerRadius,rollerRadius,18,48),aluminum);
- wheel.castShadow=true; wheel.receiveShadow=true; spin.add(wheel);
- spin.add(new THREE.Mesh(new THREE.CylinderGeometry(1.25,1.25,25,32),bearingMat));
- const key=new THREE.Mesh(new THREE.BoxGeometry(1.2,1,3),redMat);
- key.position.set(0,rollerRadius-.15,0); spin.add(key);
+ const pivot=new THREE.Group();
+ pivot.position.set(0,ballCenterY,0);
+ const assembly=new THREE.Group();
  const radial=new THREE.Vector3(Math.cos(a),0,Math.sin(a));
  const tangent=new THREE.Vector3(-Math.sin(a),0,Math.cos(a)).normalize();
- outer.position.set(radial.x*rollerCenterRadius,rollerY,radial.z*rollerCenterRadius);
- outer.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),tangent);
- outer.add(spin); rollers.add(outer);
+ assembly.position.set(radial.x*rollerCenterRadius,rollerY-ballCenterY,radial.z*rollerCenterRadius);
+ assembly.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),tangent);
 
- const supports=new THREE.Group(); supports.name="ROLLER "+(i+1)+" BEARING SUPPORTS";
+ const spin=new THREE.Group();
+ const wheel=new THREE.Mesh(new THREE.CylinderGeometry(rollerRadius,rollerRadius,18,48),aluminum);
+ wheel.castShadow=true; wheel.receiveShadow=true; spin.add(wheel);
+ const shaft=new THREE.Mesh(new THREE.CylinderGeometry(1.25,1.25,25,32),bearingMat);
+ shaft.castShadow=true; shaft.receiveShadow=true; spin.add(shaft);
+ const key=new THREE.Mesh(new THREE.BoxGeometry(1.2,1,3),redMat);
+ key.position.set(0,rollerRadius-.15,0); spin.add(key);
+ assembly.add(spin);
+
+ const supports=new THREE.Group();
  [-1,1].forEach(side=>{
-   const p=radial.clone().multiplyScalar(rollerCenterRadius).add(tangent.clone().multiplyScalar(side*12.5));
-   p.y=rollerY;
    const pedestal=new THREE.Group();
-   pedestal.position.set(p.x,p.y,p.z);
-   pedestal.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),tangent);
+   pedestal.position.set(0,side*12.5,0);
    cube(pedestal,[7,9,8],[0,0,0],black);
-   const bearing=cyl(pedestal,2.2,3,[0,0,0],bearingMat,'y');
+   cyl(pedestal,2.2,3,[0,0,0],bearingMat,'y');
    supports.add(pedestal);
  });
- rollers.add(supports);
- rollerAssemblies.push({outer,spin,radial,tangent});
+ assembly.add(supports);
+ pivot.add(assembly);
+ rollers.add(pivot);
+ rollerAssemblies.push({pivot,assembly,spin,radial,tangent});
 }
-rollerAngles.forEach((a,i)=>makeRoller(i,a));
+rollerAngles.forEach((a,i)=>makeRoller(i,a));i,a));
 
 const rollerCableGroup=new THREE.Group(); rollerCableGroup.name="ROLLER SUPPORT CABLES"; scene.add(rollerCableGroup);
 function rollerCable(points){
@@ -277,7 +280,7 @@ const supportStates=[0,2*Math.PI/3,4*Math.PI/3];
 let supportIndex=0;
 function setSupportIndex(index){
  supportIndex=index%3;
- rollerAssemblies.forEach(r=>r.outer.rotation.y=supportStates[supportIndex]);
+ rollerAssemblies.forEach(r=>r.pivot.rotation.y=supportStates[supportIndex]);
  document.querySelector('#supportVal').textContent='PASS '+(supportIndex+1)+' / '+(supportIndex===0?'FIXED':'INDEXED');
 }
 setSupportIndex(0);
@@ -314,7 +317,7 @@ document.querySelector('#crack').onclick=()=>{
 document.querySelector('#reset').onclick=()=>{
  camera.position.set(112,78,112); controls.target.set(0,38,0); controls.update();
  rot=0; tilt=0; supportIndex=0; rotEl.value=0; tiltEl.value=0;
- rollerAssemblies.forEach(r=>r.outer.rotation.y=0); det.rotation.y=0; crack.visible=true; showCrack=true;
+ rollerAssemblies.forEach(r=>r.pivot.rotation.y=0); det.rotation.y=0; crack.visible=true; showCrack=true;
  paused=false; document.querySelector('#pause').textContent='Pause scan';
  document.querySelector('#scanState').textContent='RUNNING';
  document.querySelector('#supportVal').textContent='PASS 1 / FIXED';
